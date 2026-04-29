@@ -128,8 +128,8 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {requests.length > 0 ? (
-                  requests.map((req, i) => (
-                    <div key={i} className="card-level-2 p-5 border-t-4 border-t-secondary-400 flex flex-col h-full group hover:border-secondary-500 transition-all">
+                  requests.filter((r: any) => r.status === "pending").map((req, i) => (
+                    <div key={req.id || i} className="card-level-2 p-5 border-t-4 border-t-secondary-400 flex flex-col h-full group hover:border-secondary-500 transition-all">
                       <div className="flex items-center gap-3 mb-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold group-hover:scale-110 transition-transform bg-primary-50 text-primary-600`}>
                           {req.senderName?.split(' ').map((n: string) => n[0]).join('') || '??'}
@@ -140,17 +140,50 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-4 flex-1">
-                        <p className="mb-2">"{req.message || `I can teach you ${req.skillOffered} in exchange!`}"</p>
+                        <p className="mb-2">&quot;{req.message || `I can teach you ${req.skillOffered} in exchange!`}&quot;</p>
                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
                           <span className="material-symbols-outlined text-[14px]">schedule</span>
                           {req.proposedTime || 'Flexible'}
                         </div>
                       </div>
                       <div className="flex gap-2 mt-auto">
-                        <button className="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 rounded-lg text-sm transition-all shadow-lg shadow-primary-500/10 active:scale-95">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/requests", {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ requestId: req.id, action: "accept" })
+                              });
+                              if (res.ok) {
+                                setRequests(prev => prev.filter((r: any) => r.id !== req.id));
+                                alert("✅ Request accepted! A session has been created.");
+                              }
+                            } catch (err) {
+                              console.error("Failed to accept:", err);
+                            }
+                          }}
+                          className="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 rounded-lg text-sm transition-all shadow-lg shadow-primary-500/10 active:scale-95"
+                        >
                           Accept
                         </button>
-                        <button className="px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/requests", {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ requestId: req.id, action: "decline" })
+                              });
+                              if (res.ok) {
+                                setRequests(prev => prev.filter((r: any) => r.id !== req.id));
+                              }
+                            } catch (err) {
+                              console.error("Failed to decline:", err);
+                            }
+                          }}
+                          className="px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
+                        >
                           <span className="material-symbols-outlined text-sm">close</span>
                         </button>
                       </div>

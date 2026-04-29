@@ -9,6 +9,8 @@ export default function Discovery() {
   const [mentors, setMentors] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
+  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -23,13 +25,29 @@ export default function Discovery() {
       const { email } = JSON.parse(storedUser);
       
       try {
-        const res = await fetch(`/api/discovery?email=${email}`);
-        const data = await res.json();
-        if (res.ok) {
-          setMentors(data.data);
+        const [mentorsRes, requestsRes] = await Promise.all([
+          fetch(`/api/discovery?email=${email}`),
+          fetch(`/api/requests?email=${email}&type=outgoing`)
+        ]);
+        
+        const mentorsData = await mentorsRes.json();
+        const requestsData = await requestsRes.json();
+        
+        if (mentorsRes.ok) {
+          setMentors(mentorsData.data);
+        }
+        
+        // Track which users already have pending requests
+        if (requestsRes.ok) {
+          const pending = new Set<string>(
+            requestsData.data
+              .filter((r: any) => r.status === "pending")
+              .map((r: any) => r.receiverEmail)
+          );
+          setSentRequests(pending);
         }
       } catch (err) {
-        console.error("Failed to fetch discovery mentors:", err);
+        console.error("Failed to fetch discovery data:", err);
       } finally {
         setLoading(false);
       }
@@ -46,6 +64,43 @@ export default function Discovery() {
     const emailMatch = mentor.email?.toLowerCase().includes(query);
     return nameMatch || skillMatch || emailMatch;
   });
+
+  const handleProposeSwap = async (mentor: any) => {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) return;
+
+    const { email } = JSON.parse(storedUser);
+    setSendingTo(mentor.id);
+
+    try {
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderEmail: email,
+          receiverEmail: mentor.email || mentor.id,
+          skillWanted: mentor.expertise?.[0],
+          skillOffered: "",
+          message: ""
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSentRequests(prev => new Set([...prev, mentor.email || mentor.id]));
+        alert(`✅ Swap request sent to ${mentor.fullName}!`);
+      } else {
+        alert(`⚠️ ${data.error}`);
+      }
+    } catch (err) {
+      console.error("Failed to send swap request:", err);
+      alert("❌ Failed to send request. Please try again.");
+    } finally {
+      setSendingTo(null);
+    }
+  };
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-surface-50 flex">
@@ -94,44 +149,69 @@ export default function Discovery() {
                 <p className="text-slate-500 font-medium">Finding your perfect skill matches...</p>
               </div>
             ) : filteredMentors.length > 0 ? (
-              filteredMentors.map((mentor, index) => (
-                <div key={mentor.id} className="card-level-2 p-6 overflow-hidden relative group">
-                  <div className="absolute top-0 right-0 w-2 h-full bg-secondary-400"></div>
-                  <div className="flex flex-col sm:flex-row justify-between gap-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-secondary-100 text-secondary-600 flex items-center justify-center font-bold text-xl shadow-inner">
-                        {mentor.fullName?.split(' ').map((n: string) => n[0]).join('')}
-                      </div>
-                      <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary-50 text-secondary-700 text-xs font-bold mb-2">
-                          <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                          Match Score: {index === 0 ? '98%' : index === 1 ? '85%' : '72%'}
+              filteredMentors.map((mentor, index) => {
+                const alreadySent = sentRequests.has(mentor.email || mentor.id);
+                const isSending = sendingTo === mentor.id;
+                
+                return (
+                  <div key={mentor.id} className="card-level-2 p-6 overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 w-2 h-full bg-secondary-400"></div>
+                    <div className="flex flex-col sm:flex-row justify-between gap-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-secondary-100 text-secondary-600 flex items-center justify-center font-bold text-xl shadow-inner">
+                          {mentor.fullName?.split(' ').map((n: string) => n[0]).join('')}
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800">{mentor.fullName}</h3>
-                        <p className="text-sm text-slate-500 mb-4">{mentor.bio?.substring(0, 50)}... • <span className="font-medium text-slate-600">Knows {mentor.expertise?.[0]}</span></p>
-                        
-                        <div className="space-y-2">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Can Teach You</p>
-                          <div className="flex gap-2 flex-wrap">
-                            {mentor.expertise?.map((skill: string, i: number) => (
-                              <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium border border-slate-200">{skill}</span>
-                            ))}
+                        <div>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary-50 text-secondary-700 text-xs font-bold mb-2">
+                            <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                            Match Score: {index === 0 ? '98%' : index === 1 ? '85%' : `${Math.max(50, 90 - index * 8)}%`}
+                          </div>
+                          <h3 className="text-xl font-bold text-slate-800">{mentor.fullName}</h3>
+                          <p className="text-sm text-slate-500 mb-4">
+                            {mentor.bio ? `${mentor.bio.substring(0, 50)}...` : "Student"} • <span className="font-medium text-slate-600">Knows {mentor.expertise?.[0] || "Various"}</span>
+                          </p>
+                          
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Can Teach You</p>
+                            <div className="flex gap-2 flex-wrap">
+                              {mentor.expertise?.map((skill: string, i: number) => (
+                                <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium border border-slate-200">{skill}</span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex sm:flex-col gap-2 shrink-0">
-                      <button className="flex-1 sm:flex-none px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl shadow-md transition-all hover:-translate-y-0.5">
-                        Propose Swap
-                      </button>
-                      <button className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all">
-                        View Profile
-                      </button>
+                      
+                      <div className="flex sm:flex-col gap-2 shrink-0">
+                        {alreadySent ? (
+                          <button disabled className="flex-1 sm:flex-none px-6 py-2.5 bg-green-100 text-green-700 font-bold rounded-xl cursor-not-allowed flex items-center gap-2 justify-center">
+                            <span className="material-symbols-outlined text-sm">check_circle</span>
+                            Request Sent
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleProposeSwap(mentor)}
+                            disabled={isSending}
+                            className="flex-1 sm:flex-none px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl shadow-md transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center"
+                          >
+                            {isSending ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Sending...
+                              </>
+                            ) : (
+                              "Propose Swap"
+                            )}
+                          </button>
+                        )}
+                        <button className="flex-1 sm:flex-none px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all">
+                          View Profile
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="p-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
                 <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">search_off</span>
@@ -145,7 +225,7 @@ export default function Discovery() {
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                 <span className="material-symbols-outlined text-slate-400">search</span>
               </div>
-              <h4 className="font-bold text-slate-800 mb-2">Can't find a perfect match?</h4>
+              <h4 className="font-bold text-slate-800 mb-2">Can&apos;t find a perfect match?</h4>
               <p className="text-slate-500 text-sm mb-4">Expand your department search or post a public request.</p>
               <button className="text-primary-600 font-bold text-sm hover:underline">
                 Browse all categories
