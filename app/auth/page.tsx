@@ -27,7 +27,7 @@ export default function AuthPage() {
     if (value && index === 4 && newOtp.every((v) => v !== "")) {
       // Simulate verification then redirect
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/onboarding");
       }, 800);
     }
   };
