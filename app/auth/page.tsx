@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
@@ -11,6 +11,16 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [userCount, setUserCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/users/count")
+      .then(res => res.json())
+      .then(data => {
+        if (data.count) setUserCount(data.count);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleAuth = async () => {
     const isValidEmail = email && (
@@ -169,7 +179,7 @@ export default function AuthPage() {
               <span className="flex h-2 w-2 rounded-full bg-secondary-400 animate-pulse"></span>
               Active Now
             </div>
-            <h2 className="text-4xl font-bold leading-tight mb-4">42 mentors online right now.</h2>
+            <h2 className="text-4xl font-bold leading-tight mb-4">{userCount} {userCount === 1 ? 'mentor' : 'mentors'} registered right now.</h2>
             <p className="text-slate-300 font-[family-name:var(--font-lexend)]">
               Join the community of students trading skills in design, coding, languages, and more.
             </p>

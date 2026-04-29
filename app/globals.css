@@ -71,6 +71,74 @@
   --foreground: #0b1c30;
 }
 
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  --color-surface-50: #1e293b;
+  --color-surface-100: #334155;
+  --color-surface-200: #475569;
+  --color-surface-300: #64748b;
+  --color-surface-400: #94a3b8;
+  --color-surface-500: #cbd5e1;
+  
+  --color-slate-50: #0f172a;
+  --color-slate-100: #1e293b;
+  --color-slate-200: #334155;
+  --color-slate-300: #475569;
+  --color-slate-400: #64748b;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #e2e8f0;
+  --color-slate-800: #f1f5f9;
+  --color-slate-900: #f8fafc;
+}
+
+.dark .card-level-1,
+.dark .card-level-2,
+.dark .card-level-3 {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #0f172a !important;
+}
+
+.dark .text-slate-800,
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark aside {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: #334155 !important;
+}
+
 /* ===== Keyframe Animations ===== */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }

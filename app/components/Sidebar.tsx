@@ -110,6 +110,17 @@ export default function Sidebar() {
             {item.name}
           </Link>
         ))}
+        
+        <button
+          onClick={() => {
+            localStorage.removeItem("user");
+            window.location.href = "/auth";
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors mt-2"
+        >
+          <span className="material-symbols-outlined text-lg">logout</span>
+          Sign Out
+        </button>
       </div>
     </aside>
   );
