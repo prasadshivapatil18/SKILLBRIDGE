@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import VideoTile from "@/app/components/VideoTile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function CallPage() {
   const params = useParams<{ roomId: string }>();
@@ -37,6 +37,30 @@ export default function CallPage() {
     leaveCall();
     router.push("/");
   };
+
+  useEffect(() => {
+    // Silent context injection — not shown in UI
+    // We do this by directly posting to the API, not via sendMessage
+    // so it doesn't appear in the visible chat history
+    fetch("/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: `The user is currently in a WebRTC video call. 
+                      Room ID: ${roomId}. If they ask about call issues, 
+                      help them troubleshoot audio, video, or connectivity.`
+          },
+          {
+            role: "user", 
+            content: "I just joined a video call."
+          }
+        ]
+      })
+    }).catch(() => {}); // silent — don't surface errors for context injection
+  }, [roomId]);
 
   if (error) {
     return (

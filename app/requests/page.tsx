@@ -312,13 +312,16 @@ export default function RequestsPage() {
                             }`}>
                               {req.status === 'accepted' ? '✅ Accepted' : '❌ Declined'}
                             </div>
-                            {req.status === 'accepted' && req.sessionId && (
-                              <Link 
-                                href={`/call/${req.sessionId}`}
-                                className="w-full py-2 bg-primary-500 text-white text-[10px] font-black rounded-lg text-center hover:bg-primary-600 transition-colors"
-                              >
-                                Join Room
-                              </Link>
+                            {req.status === 'accepted' && (req.roomId || req.sessionId) && (
+                              <>
+                                <Link 
+                                  href={`/call/${req.roomId || req.sessionId}`}
+                                  className="w-full py-2 bg-primary-500 text-white text-[10px] font-black rounded-lg text-center hover:bg-primary-600 transition-colors"
+                                >
+                                  Join Room
+                                </Link>
+                                <p className="text-[9px] text-slate-400 font-mono text-center mt-1 truncate" title={req.roomId || req.sessionId}>Room: {(req.roomId || req.sessionId)?.slice(0, 8)}...</p>
+                              </>
                             )}
                           </div>
                         )}
@@ -326,14 +329,17 @@ export default function RequestsPage() {
                         {/* Right: Info (Only for Outgoing) */}
                         {activeTab === 'outgoing' && (
                           <div className="p-6 md:w-48 bg-white flex md:flex-col gap-3 justify-center border-t md:border-t-0 md:border-l border-slate-100">
-                            {req.status === 'accepted' && req.sessionId ? (
-                              <Link 
-                                href={`/call/${req.sessionId}`}
-                                className="flex-1 md:flex-none py-3 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-center"
-                              >
-                                <span className="material-symbols-outlined text-[20px]">videocam</span>
-                                Join Session
-                              </Link>
+                            {req.status === 'accepted' && (req.roomId || req.sessionId) ? (
+                              <>
+                                <Link 
+                                  href={`/call/${req.roomId || req.sessionId}`}
+                                  className="flex-1 md:flex-none py-3 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-center"
+                                >
+                                  <span className="material-symbols-outlined text-[20px]">videocam</span>
+                                  Join Session
+                                </Link>
+                                <p className="text-[9px] text-slate-400 font-mono text-center truncate" title={req.roomId || req.sessionId}>Room: {(req.roomId || req.sessionId)?.slice(0, 8)}...</p>
+                              </>
                             ) : req.status === 'accepted' ? (
                               <div className="text-center">
                                 <p className="text-xs font-bold text-slate-500 italic">Session ready on dashboard</p>

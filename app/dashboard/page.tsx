@@ -85,24 +85,50 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {sessions.length > 0 ? (
                   sessions.map((session, i) => (
-                    <div key={i} className="card-level-1 p-5 flex items-center justify-between group hover:border-primary-200 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold bg-${session.color || 'primary'}-500`}>
-                          {session.partnerName?.split(' ').map((n: string) => n[0]).join('') || '??'}
+                    <div key={i} className="card-level-1 p-5 group hover:border-primary-200 transition-colors">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold bg-primary-500`}>
+                            {session.partnerName?.split(' ').map((n: string) => n[0]).join('') || '??'}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-slate-800 text-lg group-hover:text-primary-600 transition-colors">{session.title}</h3>
+                            <p className="text-sm text-slate-500">
+                              with <span className="font-medium text-slate-700">{session.partnerName}</span> • {session.time} • {session.date}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-bold text-slate-800 text-lg group-hover:text-primary-600 transition-colors">{session.title}</h3>
-                          <p className="text-sm text-slate-500">
-                            {session.role || 'Session'} <span className="font-medium text-slate-700">{session.partnerName}</span> • {session.time}
-                          </p>
-                        </div>
+                        <Link 
+                          href={`/call/${session.roomId || session.id}`}
+                          className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-primary-500/20 active:scale-95 flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">videocam</span>
+                          Join Call
+                        </Link>
                       </div>
-                      <Link 
-                        href={`/call/${session.id}`}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors active:scale-95"
-                      >
-                        Join Call
-                      </Link>
+
+                      {/* Room ID Display */}
+                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-primary-600 text-sm">meeting_room</span>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Room ID</p>
+                            <p className="text-xs font-mono font-bold text-slate-700">{session.roomId || session.id}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(session.roomId || session.id);
+                            alert("✅ Room ID copied to clipboard!");
+                          }}
+                          className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 flex items-center gap-1.5 transition-colors active:scale-95"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                          Copy
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (

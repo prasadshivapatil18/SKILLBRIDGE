@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Lexend } from "next/font/google";
 import "./globals.css";
+import AssistantChat from "@/components/AssistantChat";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
     "The campus economy where knowledge is the currency. Teach what you love, learn what you need, and build your portfolio through peer-to-peer exchanges.",
   keywords: ["skill swap", "peer learning", "student platform", "skill exchange", "campus learning"],
 };
+
 
 export default function RootLayout({
   children,
@@ -47,6 +49,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-surface-50" suppressHydrationWarning>
         {children}
+        <AssistantChat />
       </body>
     </html>
   );

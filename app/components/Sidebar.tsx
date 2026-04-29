@@ -112,6 +112,7 @@ export default function Sidebar() {
         ))}
         
         <button
+          suppressHydrationWarning
           onClick={() => {
             localStorage.removeItem("user");
             window.location.href = "/auth";

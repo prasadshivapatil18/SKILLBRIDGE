@@ -84,14 +84,15 @@ export default function HistoryPage() {
         {/* Filters & Search */}
         <div className="flex items-center justify-between mb-8 animate-fade-in-up delay-100">
           <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-            <button className="px-6 py-2 bg-primary-50 text-primary-600 rounded-xl text-sm font-bold shadow-sm">All Sessions</button>
-            <button className="px-6 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-all">Taught</button>
-            <button className="px-6 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-all">Learned</button>
+            <button suppressHydrationWarning className="px-6 py-2 bg-primary-50 text-primary-600 rounded-xl text-sm font-bold shadow-sm">All Sessions</button>
+            <button suppressHydrationWarning className="px-6 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-all">Taught</button>
+            <button suppressHydrationWarning className="px-6 py-2 text-slate-400 hover:text-slate-600 rounded-xl text-sm font-bold transition-all">Learned</button>
           </div>
           
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors">search</span>
             <input 
+              suppressHydrationWarning
               type="text" 
               placeholder="Search by skill or partner..." 
               value={searchQuery}

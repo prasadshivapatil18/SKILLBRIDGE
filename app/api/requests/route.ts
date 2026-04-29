@@ -119,13 +119,19 @@ export async function PATCH(request: Request) {
       });
 
       // Create a session between the two users
+      const { v4: uuidv4 } = require("uuid");
+      const roomId = uuidv4();
+
       const sessionDoc = await db.collection("sessions").add({
         participants: [requestData.senderEmail, requestData.receiverEmail],
         senderName: requestData.senderName,
         receiverName: requestData.receiverName,
+        senderEmail: requestData.senderEmail,
+        receiverEmail: requestData.receiverEmail,
         skill: requestData.skillWanted,
         title: `${requestData.skillWanted} Swap Session`,
         partnerName: requestData.senderName,
+        roomId: roomId,
         status: "upcoming",
         date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         time: "3:00 PM",
@@ -135,9 +141,10 @@ export async function PATCH(request: Request) {
         createdAt: new Date().toISOString()
       });
 
-      // Update request with sessionId for easy linking
+      // Update request with sessionId and roomId for easy linking
       await db.collection("requests").doc(requestId).update({
-        sessionId: sessionDoc.id
+        sessionId: sessionDoc.id,
+        roomId: roomId
       });
 
       return NextResponse.json({ success: true, message: "Request accepted! Session created." });
