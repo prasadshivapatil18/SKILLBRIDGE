@@ -24,14 +24,14 @@ export default function Discovery() {
               <div className="flex flex-col sm:flex-row justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-secondary-100 text-secondary-600 flex items-center justify-center font-bold text-xl shadow-inner">
-                    MT
+                    SP
                   </div>
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary-50 text-secondary-700 text-xs font-bold mb-2">
                       <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
                       98% Match Probability
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800"> Shivaprasad</h3>
+           z         <h3 className="text-xl font-bold text-slate-800"> Shivaprasad</h3>
                     <p className="text-sm text-slate-500 mb-4">Visual Arts Jr. • <span className="font-medium text-slate-600">Needs Data Structures</span></p>
                     
                     <div className="space-y-2">
@@ -60,7 +60,7 @@ export default function Discovery() {
               <div className="flex flex-col sm:flex-row justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xl">
-                    ER
+                    SH
                   </div>
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-bold mb-2">
@@ -93,14 +93,14 @@ export default function Discovery() {
               <div className="flex flex-col sm:flex-row justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-tertiary-100 text-tertiary-600 flex items-center justify-center font-bold text-xl">
-                    LP
+                    PV
                   </div>
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-bold mb-2">
                       <span className="material-symbols-outlined text-[14px]">psychology</span>
                       72% Match Probability
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800">Pavan</h3>
+                    <h3 className="text-xl font-bold text-slate-800">Pavan M V</h3>
                     <p className="text-sm text-slate-500 mb-4">lolc Comp. So. • <span className="font-medium text-slate-600">Needs Figma</span></p>
                     
                     <div className="space-y-2">

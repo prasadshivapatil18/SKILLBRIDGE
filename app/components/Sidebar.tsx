@@ -35,7 +35,7 @@ export default function Sidebar() {
         {/* User Profile Summary */}
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 mb-6">
           <div className="w-10 h-10 rounded-full bg-secondary-100 border-2 border-white shadow-sm flex items-center justify-center text-secondary-700 font-bold">
-            AR
+            RK
           </div>
           <div className="overflow-hidden">
             <p className="text-sm font-bold text-slate-800 truncate">Rakesh</p>
