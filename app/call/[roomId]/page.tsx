@@ -1,0 +1,143 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useWebRTC } from "@/hooks/useWebRTC";
+import VideoTile from "@/app/components/VideoTile";
+import { useState } from "react";
+
+export default function CallPage() {
+  const params = useParams<{ roomId: string }>();
+  const roomId = params?.roomId || "";
+  const router = useRouter();
+
+  const {
+    localStream,
+    remoteStreams,
+    isConnected,
+    error,
+    toggleAudio,
+    toggleVideo,
+    leaveCall
+  } = useWebRTC(roomId);
+
+  const [isMicOn, setIsMicOn] = useState(true);
+  const [isCamOn, setIsCamOn] = useState(true);
+
+  const handleToggleAudio = () => {
+    toggleAudio();
+    setIsMicOn(!isMicOn);
+  };
+
+  const handleToggleVideo = () => {
+    toggleVideo();
+    setIsCamOn(!isCamOn);
+  };
+
+  const handleLeave = () => {
+    leaveCall();
+    router.push("/");
+  };
+
+  if (error) {
+    return (
+      <div className="h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
+        <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-3xl text-center max-w-md">
+          <span className="material-symbols-outlined text-red-500 text-5xl mb-4">error</span>
+          <h2 className="text-xl font-bold text-white mb-2">Connection Error</h2>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <button 
+            onClick={() => router.push("/")}
+            className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden font-[family-name:var(--font-lexend)]">
+      {/* Header */}
+      <header className="h-16 px-6 border-b border-white/5 flex items-center justify-between bg-gray-900/50 backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center">
+            <span className="material-symbols-outlined text-white text-sm">videocam</span>
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-white">Room: {roomId}</h1>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                {isConnected ? 'Connected' : 'Connecting...'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Grid */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-[300px]">
+          {/* Local Video */}
+          {localStream && (
+            <div className="relative">
+              <VideoTile stream={localStream} muted={true} label="You" />
+              {!isCamOn && (
+                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center rounded-3xl">
+                   <span className="material-symbols-outlined text-4xl text-gray-600">videocam_off</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Remote Videos */}
+          {Array.from(remoteStreams.entries()).map(([peerId, stream]) => (
+            <VideoTile key={peerId} stream={stream} label={`Peer: ${peerId.slice(0, 4)}`} />
+          ))}
+
+          {remoteStreams.size === 0 && (
+            <div className="col-span-full flex flex-col items-center justify-center p-20 text-center">
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-gray-500 text-3xl animate-pulse">group</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-400">Waiting for others to join...</h3>
+              <p className="text-sm text-gray-600 mt-1">Share the Room ID to start the call</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer Controls */}
+      <footer className="h-24 px-8 border-t border-white/5 bg-gray-900/80 backdrop-blur-xl flex items-center justify-center gap-6">
+        <button 
+          onClick={handleToggleAudio}
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+            isMicOn ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+          }`}
+        >
+          <span className="material-symbols-outlined">{isMicOn ? 'mic' : 'mic_off'}</span>
+        </button>
+
+        <button 
+          onClick={handleToggleVideo}
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+            isCamOn ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+          }`}
+        >
+          <span className="material-symbols-outlined">{isCamOn ? 'videocam' : 'videocam_off'}</span>
+        </button>
+
+        <div className="w-[1px] h-10 bg-white/10 mx-2"></div>
+
+        <button 
+          onClick={handleLeave}
+          className="px-8 h-14 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl flex items-center gap-3 transition-all shadow-lg shadow-red-600/20 active:scale-95"
+        >
+          <span className="material-symbols-outlined">call_end</span>
+          Leave Room
+        </button>
+      </footer>
+    </div>
+  );
+}

@@ -98,7 +98,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <Link 
-                        href="/session"
+                        href={`/call/${session.id}`}
                         className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors active:scale-95"
                       >
                         Join Call
@@ -194,6 +194,51 @@ export default function Dashboard() {
                     <p className="text-slate-400 italic">No pending requests at the moment.</p>
                   </div>
                 )}
+              </div>
+            </section>
+
+            {/* Instant Meeting Section */}
+            <section className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-700"></div>
+              <div className="relative z-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <h2 className="text-2xl font-black mb-2">Need an Instant Swap?</h2>
+                    <p className="text-primary-100 font-medium">Generate a private link and share it with any peer to start a session immediately.</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const { v4: uuidv4 } = require('uuid');
+                      const roomId = uuidv4();
+                      router.push(`/call/${roomId}`);
+                    }}
+                    className="px-8 py-4 bg-white text-primary-600 font-black rounded-2xl shadow-xl hover:bg-primary-50 transition-all active:scale-95 flex items-center gap-3 whitespace-nowrap"
+                  >
+                    <span className="material-symbols-outlined">video_call</span>
+                    Start New Call
+                  </button>
+                </div>
+                
+                <div className="mt-8 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center gap-4">
+                  <p className="text-sm font-bold text-primary-200 uppercase tracking-widest whitespace-nowrap">Join existing room:</p>
+                  <div className="flex-1 w-full relative">
+                    <input 
+                      type="text" 
+                      id="roomInput"
+                      placeholder="Enter Room ID (e.g. uuid)..." 
+                      className="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-4 pr-32 text-sm text-white placeholder-primary-300 focus:outline-none focus:bg-white/20 transition-all"
+                    />
+                    <button 
+                      onClick={() => {
+                        const roomId = (document.getElementById('roomInput') as HTMLInputElement).value;
+                        if (roomId) router.push(`/call/${roomId}`);
+                      }}
+                      className="absolute right-2 top-2 bottom-2 px-4 bg-primary-400 hover:bg-primary-300 text-white font-bold rounded-lg text-xs transition-colors"
+                    >
+                      Join Now
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
           </div>

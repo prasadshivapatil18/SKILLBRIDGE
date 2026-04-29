@@ -119,7 +119,7 @@ export async function PATCH(request: Request) {
       });
 
       // Create a session between the two users
-      await db.collection("sessions").add({
+      const sessionDoc = await db.collection("sessions").add({
         participants: [requestData.senderEmail, requestData.receiverEmail],
         senderName: requestData.senderName,
         receiverName: requestData.receiverName,
@@ -133,6 +133,11 @@ export async function PATCH(request: Request) {
         type: "learned",
         credits: 2,
         createdAt: new Date().toISOString()
+      });
+
+      // Update request with sessionId for easy linking
+      await db.collection("requests").doc(requestId).update({
+        sessionId: sessionDoc.id
       });
 
       return NextResponse.json({ success: true, message: "Request accepted! Session created." });

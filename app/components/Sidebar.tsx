@@ -35,7 +35,7 @@ export default function Sidebar() {
     { name: "Swap Requests", icon: "swap_horiz", href: "/requests", badge: 2 },
     { name: "Learning History", icon: "history", href: "/history" },
     { name: "Discovery", icon: "search", href: "/discovery" },
-    { name: "Sessions", icon: "videocam", href: "/session", badge: 3 },
+    { name: "Sessions", icon: "videocam", href: "/dashboard", badge: 3 },
   ];
 
   const bottomItems = [
