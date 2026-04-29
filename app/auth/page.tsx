@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
   const router = useRouter();
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -52,45 +54,95 @@ export default function AuthPage() {
 
           <div className="max-w-sm mx-auto w-full animate-fade-in-up">
             <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-8 mx-auto">
-              <span className="material-symbols-outlined text-3xl text-primary-600">lock</span>
+              <span className="material-symbols-outlined text-3xl text-primary-600">
+                {step === "email" ? "mail" : "lock"}
+              </span>
             </div>
 
             <h1 className="text-3xl font-extrabold text-slate-900 text-center mb-2">Welcome Back</h1>
-            <p className="text-slate-500 text-center mb-10 text-sm">
-              Sign in to your SkillSwap account to continue learning. Enter the 5-digit code sent to your .edu email.
-            </p>
+            
+            {step === "email" ? (
+              <>
+                <p className="text-slate-500 text-center mb-10 text-sm">
+                  Sign in to your SkillSwap account to continue learning. Please enter your .edu email.
+                </p>
+                <div className="mb-8">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && email) {
+                        setStep("otp");
+                      }
+                    }}
+                    placeholder="student@university.edu"
+                    className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
+                  />
+                </div>
+                <button 
+                  onClick={() => {
+                    if (email) {
+                      setStep("otp");
+                    }
+                  }}
+                  className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
+                    email ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
+                  }`}
+                  disabled={!email}
+                >
+                  Send Verification Code
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-slate-500 text-center mb-10 text-sm">
+                  We've sent a 5-digit code to <span className="font-semibold text-slate-700">{email}</span>.
+                </p>
 
-            <div className="flex gap-3 justify-center mb-8">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => { inputRefs.current[index] = el; }}
-                  type="text"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="otp-input w-12 h-14 sm:w-14 sm:h-16 text-xl"
-                  aria-label={`OTP digit ${index + 1}`}
-                />
-              ))}
-            </div>
+                <div className="flex gap-3 justify-center mb-8">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => { inputRefs.current[index] = el; }}
+                      type="text"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      className="otp-input w-12 h-14 sm:w-14 sm:h-16 text-xl"
+                      aria-label={`OTP digit ${index + 1}`}
+                    />
+                  ))}
+                </div>
 
-            <button 
-              onClick={() => router.push("/dashboard")}
-              className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
-                otp.every(v => v) ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
-              }`}
-            >
-              Verify & Continue
-            </button>
+                <button 
+                  onClick={() => router.push("/dashboard")}
+                  className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
+                    otp.every(v => v) ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
+                  }`}
+                  disabled={!otp.every(v => v)}
+                >
+                  Verify & Continue
+                </button>
 
-            <div className="mt-8 text-center">
-              <p className="text-slate-500 text-sm">
-                Didn't receive code?{" "}
-                <button className="text-primary-600 font-semibold hover:underline">Resend OTP</button>
-              </p>
-            </div>
+                <div className="mt-8 flex flex-col items-center gap-3">
+                  <p className="text-slate-500 text-sm">
+                    Didn't receive code?{" "}
+                    <button className="text-primary-600 font-semibold hover:underline">Resend OTP</button>
+                  </p>
+                  <button 
+                    onClick={() => {
+                      setStep("email");
+                      setOtp(["", "", "", "", ""]);
+                    }}
+                    className="text-slate-400 text-sm hover:text-slate-600 transition-colors"
+                  >
+                    Change email address
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
