@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Sidebar from "../components/Sidebar";
 
 export default function Dashboard() {
@@ -37,9 +38,12 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                    <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors">
+                    <Link 
+                      href="/session"
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors active:scale-95"
+                    >
                       Join Call
-                    </button>
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -176,18 +180,24 @@ export default function Dashboard() {
             </div>
             
             {/* Credit Balance */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
-              <h2 className="text-sm font-medium text-slate-300 mb-1">Available Credits</h2>
-              <div className="flex items-end gap-2">
-                <span className="text-4xl font-extrabold text-white">24</span>
-                <span className="text-sm font-medium text-secondary-400 mb-1">credits</span>
+            <a href="/history" className="block group">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group-hover:scale-[1.02] transition-transform">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
+                <h2 className="text-sm font-medium text-slate-300 mb-1">Available Credits</h2>
+                <div className="flex items-end gap-2">
+                  <span className="text-4xl font-extrabold text-white">24</span>
+                  <span className="text-sm font-medium text-secondary-400 mb-1">credits</span>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-700/50 flex justify-between text-xs text-slate-400">
+                  <span>Earned: 32</span>
+                  <span>Spent: 8</span>
+                </div>
+                <div className="mt-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 group-hover:text-primary-400 transition-colors">
+                  View full ledger
+                  <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-700/50 flex justify-between text-xs text-slate-400">
-                <span>Earned: 32</span>
-                <span>Spent: 8</span>
-              </div>
-            </div>
+            </a>
           </div>
         </div>
       </main>
