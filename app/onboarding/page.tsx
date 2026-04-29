@@ -42,9 +42,46 @@ export default function OnboardingPage() {
     setInterestList(interestList.filter(s => s !== skill));
   };
 
-  const finishOnboarding = () => {
-    // Here you would typically save this data to your backend
-    router.push("/dashboard");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const finishOnboarding = async () => {
+    // Get user email from localStorage (stored during verify-otp)
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      router.push("/auth");
+      return;
+    }
+
+    const { email } = JSON.parse(storedUser);
+    
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          fullName,
+          bio,
+          expertise: expertiseList,
+          interests: interestList
+        }),
+      });
+
+      if (res.ok) {
+        router.push("/dashboard");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to save profile.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,6 +116,12 @@ export default function OnboardingPage() {
               </p>
 
               <div className="space-y-6">
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">error</span>
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
                   <input
@@ -86,6 +129,7 @@ export default function OnboardingPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Jane Doe"
+                    disabled={loading}
                     className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
                   />
                 </div>
@@ -96,6 +140,7 @@ export default function OnboardingPage() {
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="A short intro about yourself..."
                     rows={4}
+                    disabled={loading}
                     className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white resize-none"
                   ></textarea>
                 </div>
@@ -103,9 +148,9 @@ export default function OnboardingPage() {
                 <button 
                   onClick={() => setStep("expertise")}
                   className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg mt-8 ${
-                    fullName ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
+                    fullName && !loading ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
                   }`}
-                  disabled={!fullName}
+                  disabled={!fullName || loading}
                 >
                   Continue to Expertise
                 </button>
@@ -134,12 +179,14 @@ export default function OnboardingPage() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleAddExpertise();
                       }}
+                      disabled={loading}
                       placeholder="e.g. Graphic Design, Calculus..."
                       className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-secondary-500 focus:ring-2 focus:ring-secondary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
                     />
                     <button 
                       onClick={handleAddExpertise}
-                      className="bg-secondary-600 hover:bg-secondary-700 text-white px-6 rounded-xl font-bold transition-colors"
+                      disabled={loading}
+                      className="bg-secondary-600 hover:bg-secondary-700 text-white px-6 rounded-xl font-bold transition-colors disabled:opacity-50"
                     >
                       Add
                     </button>
@@ -153,7 +200,7 @@ export default function OnboardingPage() {
                     expertiseList.map((skill) => (
                       <div key={skill} className="flex items-center gap-2 bg-secondary-100 text-secondary-800 px-4 py-2 rounded-full font-medium text-sm">
                         {skill}
-                        <button onClick={() => handleRemoveExpertise(skill)} className="hover:text-secondary-600 focus:outline-none">
+                        <button onClick={() => handleRemoveExpertise(skill)} disabled={loading} className="hover:text-secondary-600 focus:outline-none">
                           <span className="material-symbols-outlined text-sm flex items-center">close</span>
                         </button>
                       </div>
@@ -164,16 +211,17 @@ export default function OnboardingPage() {
                 <div className="flex gap-4 mt-8">
                   <button 
                     onClick={() => setStep("profile")}
-                    className="w-1/3 py-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+                    disabled={loading}
+                    className="w-1/3 py-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-50"
                   >
                     Back
                   </button>
                   <button 
                     onClick={() => setStep("interests")}
                     className={`w-2/3 py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
-                      expertiseList.length > 0 ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
+                      expertiseList.length > 0 && !loading ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
                     }`}
-                    disabled={expertiseList.length === 0}
+                    disabled={expertiseList.length === 0 || loading}
                   >
                     Continue
                   </button>
@@ -193,6 +241,12 @@ export default function OnboardingPage() {
               </p>
 
               <div className="space-y-6">
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">error</span>
+                    {error}
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Add an interest</label>
                   <div className="flex gap-2">
@@ -203,12 +257,14 @@ export default function OnboardingPage() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleAddInterest();
                       }}
+                      disabled={loading}
                       placeholder="e.g. Python, Piano, Spanish..."
                       className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
                     />
                     <button 
                       onClick={handleAddInterest}
-                      className="bg-tertiary-600 hover:bg-tertiary-700 text-white px-6 rounded-xl font-bold transition-colors"
+                      disabled={loading}
+                      className="bg-tertiary-600 hover:bg-tertiary-700 text-white px-6 rounded-xl font-bold transition-colors disabled:opacity-50"
                     >
                       Add
                     </button>
@@ -222,7 +278,7 @@ export default function OnboardingPage() {
                     interestList.map((skill) => (
                       <div key={skill} className="flex items-center gap-2 bg-tertiary-100 text-tertiary-800 px-4 py-2 rounded-full font-medium text-sm">
                         {skill}
-                        <button onClick={() => handleRemoveInterest(skill)} className="hover:text-tertiary-600 focus:outline-none">
+                        <button onClick={() => handleRemoveInterest(skill)} disabled={loading} className="hover:text-tertiary-600 focus:outline-none">
                           <span className="material-symbols-outlined text-sm flex items-center">close</span>
                         </button>
                       </div>
@@ -233,18 +289,23 @@ export default function OnboardingPage() {
                 <div className="flex gap-4 mt-8">
                   <button 
                     onClick={() => setStep("expertise")}
-                    className="w-1/3 py-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+                    disabled={loading}
+                    className="w-1/3 py-4 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-50"
                   >
                     Back
                   </button>
                   <button 
                     onClick={finishOnboarding}
-                    className={`w-2/3 py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
-                      interestList.length > 0 ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
+                    className={`w-2/3 py-4 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${
+                      interestList.length > 0 && !loading ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
                     }`}
-                    disabled={interestList.length === 0}
+                    disabled={interestList.length === 0 || loading}
                   >
-                    Complete Profile
+                    {loading ? (
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    ) : (
+                      "Complete Profile"
+                    )}
                   </button>
                 </div>
               </div>

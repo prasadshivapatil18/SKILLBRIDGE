@@ -6,35 +6,57 @@ import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
   const router = useRouter();
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", ""]);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
+  const handleAuth = async () => {
+    const isValidEmail = email && (
+      email.endsWith(".edu") || 
+      email.endsWith(".com") || 
+      email.includes("@gmail.com")
+    );
 
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto-advance
-    if (value && index < 4) {
-      inputRefs.current[index + 1]?.focus();
+    if (!isValidEmail) {
+      setError("Please enter a valid email (.edu, .com, gmail).");
+      return;
     }
 
-    // Auto-submit if full
-    if (value && index === 4 && newOtp.every((v) => v !== "")) {
-      // Simulate verification then redirect
-      setTimeout(() => {
-        router.push("/onboarding");
-      }, 800);
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
     }
-  };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    setLoading(true);
+    setError("");
+    
+    const endpoint = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("user", JSON.stringify({ email: email, id: data.userId }));
+        
+        if (authMode === "signup" || data.needsOnboarding) {
+          router.push("/onboarding");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        setError(data.error || "Authentication failed.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,94 +77,83 @@ export default function AuthPage() {
           <div className="max-w-sm mx-auto w-full animate-fade-in-up">
             <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-8 mx-auto">
               <span className="material-symbols-outlined text-3xl text-primary-600">
-                {step === "email" ? "mail" : "lock"}
+                {authMode === "login" ? "login" : "person_add"}
               </span>
             </div>
 
-            <h1 className="text-3xl font-extrabold text-slate-900 text-center mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 text-center mb-2">
+              {authMode === "login" ? "Welcome Back" : "Join the Community"}
+            </h1>
             
-            {step === "email" ? (
-              <>
-                <p className="text-slate-500 text-center mb-10 text-sm">
-                  Sign in to your SkillSwap account to continue learning. Please enter your .edu email.
-                </p>
-                <div className="mb-8">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && email) {
-                        setStep("otp");
-                      }
-                    }}
-                    placeholder="student@university.edu"
-                    className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
-                  />
-                </div>
-                <button 
-                  onClick={() => {
-                    if (email) {
-                      setStep("otp");
+            <p className="text-slate-500 text-center mb-8 text-sm">
+              {authMode === "login" 
+                ? "Enter your credentials to access your dashboard." 
+                : "Create an account to start swapping skills today."}
+            </p>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-xl flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">error</span>
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@university.edu"
+                  className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && email && password) {
+                      handleAuth();
                     }
                   }}
-                  className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
-                    email ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
-                  }`}
-                  disabled={!email}
-                >
-                  Send Verification Code
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-slate-500 text-center mb-10 text-sm">
-                  We've sent a 5-digit code to <span className="font-semibold text-slate-700">{email}</span>.
-                </p>
+                  placeholder="••••••••"
+                  className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
+                />
+              </div>
+            </div>
 
-                <div className="flex gap-3 justify-center mb-8">
-                  {otp.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={(el) => { inputRefs.current[index] = el; }}
-                      type="text"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleChange(index, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(index, e)}
-                      className="otp-input w-12 h-14 sm:w-14 sm:h-16 text-xl"
-                      aria-label={`OTP digit ${index + 1}`}
-                    />
-                  ))}
-                </div>
+            <button 
+              onClick={handleAuth}
+              className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${
+                email && password && !loading ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
+              }`}
+              disabled={!email || !password || loading}
+            >
+              {loading ? (
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              ) : (
+                authMode === "login" ? "Login" : "Register Account"
+              )}
+            </button>
 
+            <div className="mt-8 text-center">
+              <p className="text-slate-500 text-sm">
+                {authMode === "login" ? "New here?" : "Already have an account?"}{" "}
                 <button 
-                  onClick={() => router.push("/dashboard")}
-                  className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
-                    otp.every(v => v) ? 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30' : 'bg-primary-400 cursor-not-allowed shadow-none'
-                  }`}
-                  disabled={!otp.every(v => v)}
+                  onClick={() => {
+                    setAuthMode(authMode === "login" ? "signup" : "login");
+                    setError("");
+                  }}
+                  className="text-primary-600 font-bold hover:underline"
                 >
-                  Verify & Continue
+                  {authMode === "login" ? "Create Account" : "Sign In"}
                 </button>
-
-                <div className="mt-8 flex flex-col items-center gap-3">
-                  <p className="text-slate-500 text-sm">
-                    Didn't receive code?{" "}
-                    <button className="text-primary-600 font-semibold hover:underline">Resend OTP</button>
-                  </p>
-                  <button 
-                    onClick={() => {
-                      setStep("email");
-                      setOtp(["", "", "", "", ""]);
-                    }}
-                    className="text-slate-400 text-sm hover:text-slate-600 transition-colors"
-                  >
-                    Change email address
-                  </button>
-                </div>
-              </>
-            )}
+              </p>
+            </div>
           </div>
         </div>
 
