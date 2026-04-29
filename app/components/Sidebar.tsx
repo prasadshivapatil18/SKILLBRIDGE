@@ -2,9 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) return;
+
+      const { email } = JSON.parse(storedUser);
+      
+      try {
+        const res = await fetch(`/api/user/profile?email=${email}`);
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch sidebar profile:", err);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const navItems = [
     { name: "Overview", icon: "dashboard", href: "/dashboard" },
@@ -19,6 +42,11 @@ export default function Sidebar() {
     { name: "Settings", icon: "settings", href: "/settings" },
     { name: "Support", icon: "help_outline", href: "/support" },
   ];
+
+  const getInitials = (name: string) => {
+    if (!name) return "??";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase();
+  };
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col fixed left-0 top-0">
@@ -35,11 +63,11 @@ export default function Sidebar() {
         {/* User Profile Summary */}
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 mb-6">
           <div className="w-10 h-10 rounded-full bg-secondary-100 border-2 border-white shadow-sm flex items-center justify-center text-secondary-700 font-bold">
-            RK
+            {getInitials(user?.fullName)}
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-bold text-slate-800 truncate">Rakesh</p>
-            <p className="text-xs text-slate-500 truncate">Information Science Senior</p>
+            <p className="text-sm font-bold text-slate-800 truncate">{user?.fullName || "Student"}</p>
+            <p className="text-xs text-slate-500 truncate">{user?.expertise?.[0] || "Exploring"}</p>
           </div>
         </div>
       </div>

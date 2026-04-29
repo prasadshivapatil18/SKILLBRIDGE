@@ -1,15 +1,76 @@
+"use client";
+
 import Link from "next/link";
 import Sidebar from "../components/Sidebar";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        router.push("/auth");
+        return;
+      }
+
+      const { email } = JSON.parse(storedUser);
+      
+      try {
+        const [userRes, sessionsRes, requestsRes] = await Promise.all([
+          fetch(`/api/user/profile?email=${email}`),
+          fetch(`/api/sessions?email=${email}&status=upcoming`),
+          fetch(`/api/requests?email=${email}&type=incoming`)
+        ]);
+
+        const userData = await userRes.json();
+        const sessionsData = await sessionsRes.json();
+        const requestsData = await requestsRes.json();
+        
+        if (userRes.ok) {
+          setUser(userData.data);
+        } else {
+          router.push("/onboarding");
+          return;
+        }
+
+        if (sessionsRes.ok) setSessions(sessionsData.data);
+        if (requestsRes.ok) setRequests(requestsData.data);
+
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface-50 flex">
       <Sidebar />
       
       <main className="flex-1 ml-64 p-8">
         <header className="mb-8 animate-fade-in-up">
-          <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Welcome back, Rakesh</h1>
-          <p className="text-slate-600">You have 3 upcoming sessions and 2 new swap requests this week.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-2">
+            Welcome back, {user?.fullName?.split(" ")[0] || "Student"}
+          </h1>
+          <p className="text-slate-600">You have {user?.credits || 0} credits available for swapping.</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -22,30 +83,34 @@ export default function Dashboard() {
                 Upcoming Sessions
               </h2>
               <div className="space-y-4">
-                {[
-                  { title: "React Fundamentals", partner: "Jordan Smith", role: "Teaching", time: "Today, 4:00 PM", color: "primary" },
-                  { title: "Italian Cooking 101", partner: "Maria Rossi", role: "Learning from", time: "Tomorrow, 2:30 PM", color: "secondary" }
-                ].map((session, i) => (
-                  <div key={i} className="card-level-1 p-5 flex items-center justify-between group hover:border-primary-200 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold bg-${session.color}-500`}>
-                        {session.partner.split(' ').map(n => n[0]).join('')}
+                {sessions.length > 0 ? (
+                  sessions.map((session, i) => (
+                    <div key={i} className="card-level-1 p-5 flex items-center justify-between group hover:border-primary-200 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold bg-${session.color || 'primary'}-500`}>
+                          {session.partnerName?.split(' ').map((n: string) => n[0]).join('') || '??'}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-lg group-hover:text-primary-600 transition-colors">{session.title}</h3>
+                          <p className="text-sm text-slate-500">
+                            {session.role || 'Session'} <span className="font-medium text-slate-700">{session.partnerName}</span> • {session.time}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-slate-800 text-lg group-hover:text-primary-600 transition-colors">{session.title}</h3>
-                        <p className="text-sm text-slate-500">
-                          {session.role} <span className="font-medium text-slate-700">{session.partner}</span> • {session.time}
-                        </p>
-                      </div>
+                      <Link 
+                        href="/session"
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors active:scale-95"
+                      >
+                        Join Call
+                      </Link>
                     </div>
-                    <Link 
-                      href="/session"
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors active:scale-95"
-                    >
-                      Join Call
-                    </Link>
+                  ))
+                ) : (
+                  <div className="card-level-1 p-10 text-center border-dashed">
+                    <p className="text-slate-400 italic">No upcoming sessions. Why not discover a mentor?</p>
+                    <Link href="/discovery" className="text-primary-600 font-bold mt-2 inline-block hover:underline">Find matches</Link>
                   </div>
-                ))}
+                )}
               </div>
             </section>
 
@@ -56,55 +121,46 @@ export default function Dashboard() {
                   <span className="material-symbols-outlined text-tertiary-500">waving_hand</span>
                   Recent Swap Requests
                 </h2>
-                <a href="/requests" className="text-sm font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors">
+                <Link href="/requests" className="text-sm font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors">
                   View All
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </a>
+                </Link>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { 
-                    name: "Sarah Chen", 
-                    wants: "UI Design", 
-                    offers: "Advanced Python",
-                    time: "Tomorrow, 4:00 PM",
-                    avatar: "bg-purple-100 text-purple-600"
-                  },
-                  { 
-                    name: "Marcus Thorne", 
-                    wants: "Video Editing", 
-                    offers: "Classical Guitar",
-                    time: "Friday, 2:00 PM",
-                    avatar: "bg-blue-100 text-blue-600"
-                  }
-                ].map((req, i) => (
-                  <div key={i} className="card-level-2 p-5 border-t-4 border-t-secondary-400 flex flex-col h-full group hover:border-secondary-500 transition-all">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold group-hover:scale-110 transition-transform ${req.avatar}`}>
-                        {req.name.split(' ').map(n => n[0]).join('')}
+                {requests.length > 0 ? (
+                  requests.map((req, i) => (
+                    <div key={i} className="card-level-2 p-5 border-t-4 border-t-secondary-400 flex flex-col h-full group hover:border-secondary-500 transition-all">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold group-hover:scale-110 transition-transform bg-primary-50 text-primary-600`}>
+                          {req.senderName?.split(' ').map((n: string) => n[0]).join('') || '??'}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm">{req.senderName}</h4>
+                          <p className="text-xs text-slate-500">wants to learn <span className="font-medium text-slate-700">{req.skillWanted}</span></p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-slate-800 text-sm">{req.name}</h4>
-                        <p className="text-xs text-slate-500">wants to learn <span className="font-medium text-slate-700">{req.wants}</span></p>
+                      <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-4 flex-1">
+                        <p className="mb-2">"{req.message || `I can teach you ${req.skillOffered} in exchange!`}"</p>
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                          <span className="material-symbols-outlined text-[14px]">schedule</span>
+                          {req.proposedTime || 'Flexible'}
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-4 flex-1">
-                      <p className="mb-2">"I can teach you {req.offers} in exchange!"</p>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
-                        {req.time}
+                      <div className="flex gap-2 mt-auto">
+                        <button className="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 rounded-lg text-sm transition-all shadow-lg shadow-primary-500/10 active:scale-95">
+                          Accept
+                        </button>
+                        <button className="px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors">
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-auto">
-                      <button className="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 rounded-lg text-sm transition-all shadow-lg shadow-primary-500/10 active:scale-95">
-                        Accept
-                      </button>
-                      <button className="px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors">
-                        <span className="material-symbols-outlined text-sm">close</span>
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="md:col-span-2 card-level-1 p-10 text-center border-dashed">
+                    <p className="text-slate-400 italic">No pending requests at the moment.</p>
                   </div>
-                ))}
+                )}
               </div>
             </section>
           </div>
@@ -122,32 +178,25 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
-                      <span className="material-symbols-outlined">palette</span>
+                {user?.expertise?.length > 0 ? (
+                  user.expertise.map((skill: string, i: number) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg ${i % 2 === 0 ? 'bg-primary-100 text-primary-600' : 'bg-secondary-100 text-secondary-600'} flex items-center justify-center`}>
+                          <span className="material-symbols-outlined">{i % 2 === 0 ? 'psychology' : 'school'}</span>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm">{skill}</h4>
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <span className="text-tertiary-500 font-bold">New</span> (0 sessions)
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">UI Design with Figma</h4>
-                      <p className="text-xs text-slate-500 flex items-center gap-1">
-                        <span className="text-tertiary-500 font-bold">4.9 ★</span> (12 sessions)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-secondary-100 text-secondary-600 flex items-center justify-center">
-                      <span className="material-symbols-outlined">movie</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">Video Editing</h4>
-                      <p className="text-xs text-slate-500 flex items-center gap-1">
-                        <span className="text-tertiary-500 font-bold">5.0 ★</span> (8 sessions)
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  ))
+                ) : (
+                  <p className="text-slate-400 text-sm italic">No expertise added yet.</p>
+                )}
               </div>
             </div>
 
@@ -162,20 +211,19 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                <div className="p-3 border border-slate-100 rounded-xl bg-slate-50 flex justify-between items-center group">
-                  <div>
-                    <h4 className="font-semibold text-slate-800 text-sm">Advanced React & Next.js</h4>
-                    <p className="text-xs text-primary-600 mt-0.5">Searching for Mentor...</p>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-300 group-hover:text-primary-500 transition-colors animate-pulse">search</span>
-                </div>
-                <div className="p-3 border border-slate-100 rounded-xl bg-slate-50 flex justify-between items-center group">
-                  <div>
-                    <h4 className="font-semibold text-slate-800 text-sm">Conversational French</h4>
-                    <p className="text-xs text-primary-600 mt-0.5">Searching for Partner...</p>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-300 group-hover:text-primary-500 transition-colors animate-pulse">search</span>
-                </div>
+                {user?.interests?.length > 0 ? (
+                  user.interests.map((skill: string, i: number) => (
+                    <div key={i} className="p-3 border border-slate-100 rounded-xl bg-slate-50 flex justify-between items-center group">
+                      <div>
+                        <h4 className="font-semibold text-slate-800 text-sm">{skill}</h4>
+                        <p className="text-xs text-primary-600 mt-0.5">Searching for Partner...</p>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-300 group-hover:text-primary-500 transition-colors animate-pulse">search</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-slate-400 text-sm italic">No interests added yet.</p>
+                )}
               </div>
             </div>
             
@@ -185,12 +233,12 @@ export default function Dashboard() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
                 <h2 className="text-sm font-medium text-slate-300 mb-1">Available Credits</h2>
                 <div className="flex items-end gap-2">
-                  <span className="text-4xl font-extrabold text-white">24</span>
+                  <span className="text-4xl font-extrabold text-white">{user?.credits || 0}</span>
                   <span className="text-sm font-medium text-secondary-400 mb-1">credits</span>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-700/50 flex justify-between text-xs text-slate-400">
-                  <span>Earned: 32</span>
-                  <span>Spent: 8</span>
+                  <span>Earned: {user?.credits || 0}</span>
+                  <span>Spent: 0</span>
                 </div>
                 <div className="mt-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1 group-hover:text-primary-400 transition-colors">
                   View full ledger

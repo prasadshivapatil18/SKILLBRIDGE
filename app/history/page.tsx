@@ -1,86 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 
-interface HistoryItem {
-  id: string;
-  skill: string;
-  partner: {
-    name: string;
-    initials: string;
-    color: string;
-  };
-  date: string;
-  duration: string;
-  type: 'learned' | 'taught';
-  credits: number;
-  rating: number;
-  status: 'completed' | 'cancelled';
-}
-
 export default function HistoryPage() {
-  const [history] = useState<HistoryItem[]>([
-    {
-      id: "h1",
-      skill: "React Fundamentals",
-      partner: { name: "Jordan Smith", initials: "JS", color: "bg-blue-100 text-blue-600" },
-      date: "Oct 10, 2023",
-      duration: "1h 15m",
-      type: 'taught',
-      credits: 2,
-      rating: 5,
-      status: 'completed'
-    },
-    {
-      id: "h2",
-      skill: "Advanced Python",
-      partner: { name: "Sarah Chen", initials: "SC", color: "bg-purple-100 text-purple-600" },
-      date: "Oct 08, 2023",
-      duration: "1h 00m",
-      type: 'learned',
-      credits: -2,
-      rating: 4.8,
-      status: 'completed'
-    },
-    {
-      id: "h3",
-      skill: "Figma Prototyping",
-      partner: { name: "Marcus Thorne", initials: "MT", color: "bg-indigo-100 text-indigo-600" },
-      date: "Oct 05, 2023",
-      duration: "45m",
-      type: 'taught',
-      credits: 1.5,
-      rating: 5,
-      status: 'completed'
-    },
-    {
-      id: "h4",
-      skill: "Italian Cooking",
-      partner: { name: "Maria Rossi", initials: "MR", color: "bg-rose-100 text-rose-600" },
-      date: "Oct 01, 2023",
-      duration: "2h 00m",
-      type: 'learned',
-      credits: -3,
-      rating: 4.9,
-      status: 'completed'
-    },
-    {
-      id: "h5",
-      skill: "Public Speaking",
-      partner: { name: "David Wu", initials: "DW", color: "bg-amber-100 text-amber-600" },
-      date: "Sep 28, 2023",
-      duration: "1h 30m",
-      type: 'taught',
-      credits: 2.5,
-      rating: 4.7,
-      status: 'completed'
-    }
-  ]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const totalCreditsEarned = history.reduce((acc, item) => item.type === 'taught' ? acc + item.credits : acc, 0);
-  const totalCreditsSpent = history.reduce((acc, item) => item.type === 'learned' ? acc + Math.abs(item.credits) : acc, 0);
-  const totalHours = 6.5; // Mocked calculation
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) return;
+
+      const { email } = JSON.parse(storedUser);
+      
+      try {
+        const res = await fetch(`/api/sessions?email=${email}&status=completed`);
+        const data = await res.json();
+        if (res.ok) {
+          setHistory(data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch history:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  const filteredHistory = history.filter(item => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.skill?.toLowerCase().includes(query) ||
+      item.partnerName?.toLowerCase().includes(query)
+    );
+  });
+
+  const totalCreditsEarned = filteredHistory.reduce((acc, item) => item.type === 'taught' ? acc + (item.credits || 0) : acc, 0);
+  const totalCreditsSpent = filteredHistory.reduce((acc, item) => item.type === 'learned' ? acc + Math.abs(item.credits || 0) : acc, 0);
 
   return (
     <div className="min-h-screen bg-surface-50 flex">
@@ -134,6 +94,8 @@ export default function HistoryPage() {
             <input 
               type="text" 
               placeholder="Search by skill or partner..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 pr-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium w-80 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none"
             />
           </div>
@@ -141,88 +103,93 @@ export default function HistoryPage() {
 
         {/* History Table/List */}
         <div className="space-y-4 animate-fade-in-up delay-200">
-          {history.map((item, i) => (
-            <div 
-              key={item.id} 
-              className="card-level-1 p-6 bg-white flex items-center justify-between group hover:border-primary-200 transition-all"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              <div className="flex items-center gap-6 flex-1">
-                {/* Type Icon */}
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
-                  item.type === 'taught' ? 'bg-secondary-50 text-secondary-600' : 'bg-primary-50 text-primary-600'
-                }`}>
-                  <span className="material-symbols-outlined text-2xl">
-                    {item.type === 'taught' ? 'campaign' : 'school'}
-                  </span>
-                </div>
-
-                {/* Skill & Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-slate-900 truncate">{item.skill}</h3>
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                      item.type === 'taught' ? 'bg-secondary-100 text-secondary-700' : 'bg-primary-100 text-primary-700'
-                    }`}>
-                      {item.type}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-tight">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-                      {item.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px]">schedule</span>
-                      {item.duration}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Partner */}
-                <div className="flex items-center gap-3 px-6 border-x border-slate-100">
-                  <div className={`w-10 h-10 rounded-full ${item.partner.color} flex items-center justify-center text-xs font-black shadow-sm group-hover:scale-110 transition-transform`}>
-                    {item.partner.initials}
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner</p>
-                    <p className="text-sm font-bold text-slate-700">{item.partner.name}</p>
-                  </div>
-                </div>
-
-                {/* Rating */}
-                <div className="px-6 border-r border-slate-100 text-center">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Rating</p>
-                  <div className="flex items-center justify-center gap-1 text-tertiary-600 font-black">
-                    <span className="material-symbols-outlined text-[16px]">star</span>
-                    {item.rating}
-                  </div>
-                </div>
-
-                {/* Credit Impact */}
-                <div className="w-32 text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Credit Impact</p>
-                  <p className={`text-xl font-black ${
-                    item.credits > 0 ? 'text-green-600' : 'text-red-500'
-                  }`}>
-                    {item.credits > 0 ? `+${item.credits}` : item.credits}
-                  </p>
-                </div>
-              </div>
-
-              {/* More Action */}
-              <button className="ml-6 p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
-                <span className="material-symbols-outlined">more_vert</span>
-              </button>
+          {loading ? (
+            <div className="p-20 text-center">
+              <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-slate-500 font-medium">Loading your journey...</p>
             </div>
-          ))}
-        </div>
+          ) : filteredHistory.length > 0 ? (
+            filteredHistory.map((item, i) => (
+              <div 
+                key={item.id} 
+                className="card-level-1 p-6 bg-white flex items-center justify-between group hover:border-primary-200 transition-all"
+              >
+                <div className="flex items-center gap-6 flex-1">
+                  {/* Type Icon */}
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                    item.type === 'taught' ? 'bg-secondary-50 text-secondary-600' : 'bg-primary-50 text-primary-600'
+                  }`}>
+                    <span className="material-symbols-outlined text-2xl">
+                      {item.type === 'taught' ? 'campaign' : 'school'}
+                    </span>
+                  </div>
 
-        {/* Pagination/Load More */}
-        <div className="mt-12 text-center">
-          <button className="px-8 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-            Load Older Sessions
-          </button>
+                  {/* Skill & Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-slate-900 truncate">{item.skill}</h3>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                        item.type === 'taught' ? 'bg-secondary-100 text-secondary-700' : 'bg-primary-100 text-primary-700'
+                      }`}>
+                        {item.type}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-tight">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                        {item.date || "Past Session"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">schedule</span>
+                        {item.duration || "1h"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Partner */}
+                  <div className="flex items-center gap-3 px-6 border-x border-slate-100">
+                    <div className={`w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black shadow-sm group-hover:scale-110 transition-transform text-slate-600`}>
+                      {item.partnerName?.split(' ').map((n: string) => n[0]).join('') || "??"}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner</p>
+                      <p className="text-sm font-bold text-slate-700">{item.partnerName || "Peer Student"}</p>
+                    </div>
+                  </div>
+
+                  {/* Rating */}
+                  <div className="px-6 border-r border-slate-100 text-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Rating</p>
+                    <div className="flex items-center justify-center gap-1 text-tertiary-600 font-black">
+                      <span className="material-symbols-outlined text-[16px]">star</span>
+                      {item.rating || 5}
+                    </div>
+                  </div>
+
+                  {/* Credit Impact */}
+                  <div className="w-32 text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Credit Impact</p>
+                    <p className={`text-xl font-black ${
+                      item.type === 'taught' ? 'text-green-600' : 'text-red-500'
+                    }`}>
+                      {item.type === 'taught' ? `+${item.credits || 0}` : `-${item.credits || 0}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* More Action */}
+                <button className="ml-6 p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                  <span className="material-symbols-outlined">more_vert</span>
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="p-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+              <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">history_edu</span>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">No history yet</h3>
+              <p className="text-slate-500">Complete your first skill swap to see it here!</p>
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -11,11 +11,12 @@ export async function POST(request: Request) {
 
     // Save user profile to Firestore
     await db.collection("users").doc(email).set({
+      email,
       fullName,
       bio,
       expertise,
       interests,
-      credits: 5, // Give 5 free credits to new users
+      credits: 50, // Give 50 free credits to new users
       onboardedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
