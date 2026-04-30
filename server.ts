@@ -99,6 +99,15 @@ app.prepare().then(() => {
       });
     });
 
+    socket.on("send-message", ({ roomId, message }: { roomId: string, message: any }) => {
+      console.log(`Message in ${roomId} from ${socket.id}:`, message);
+      io.to(roomId).emit("receive-message", {
+        ...message,
+        senderId: socket.id,
+        timestamp: new Date().toISOString()
+      });
+    });
+
     socket.on("disconnecting", () => {
       socket.rooms.forEach(roomId => {
         if (rooms.has(roomId)) {

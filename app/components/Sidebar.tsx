@@ -67,7 +67,11 @@ export default function Sidebar() {
           </div>
           <div className="overflow-hidden">
             <p className="text-sm font-bold text-slate-800 truncate">{user?.fullName || "Student"}</p>
-            <p className="text-xs text-slate-500 truncate">{user?.expertise?.[0] || "Exploring"}</p>
+            <p className="text-xs text-slate-500 truncate">
+              {typeof user?.expertise?.[0] === "string" 
+                ? user.expertise[0] 
+                : user?.expertise?.[0]?.name || "Exploring"}
+            </p>
           </div>
         </div>
       </div>

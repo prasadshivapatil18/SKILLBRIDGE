@@ -60,7 +60,10 @@ export default function Discovery() {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     const nameMatch = mentor.fullName?.toLowerCase().includes(query);
-    const skillMatch = mentor.expertise?.some((s: string) => s.toLowerCase().includes(query));
+    const skillMatch = mentor.expertise?.some((s: any) => {
+      const name = typeof s === "string" ? s : s.name;
+      return name?.toLowerCase().includes(query);
+    });
     const emailMatch = mentor.email?.toLowerCase().includes(query);
     return nameMatch || skillMatch || emailMatch;
   });
@@ -79,7 +82,7 @@ export default function Discovery() {
         body: JSON.stringify({
           senderEmail: email,
           receiverEmail: mentor.email || mentor.id,
-          skillWanted: mentor.expertise?.[0],
+          skillWanted: typeof mentor.expertise?.[0] === "string" ? mentor.expertise[0] : mentor.expertise?.[0]?.name || "",
           skillOffered: "",
           message: ""
         })
@@ -168,14 +171,16 @@ export default function Discovery() {
                           </div>
                           <h3 className="text-xl font-bold text-slate-800">{mentor.fullName}</h3>
                           <p className="text-sm text-slate-500 mb-4">
-                            {mentor.bio ? `${mentor.bio.substring(0, 50)}...` : "Student"} • <span className="font-medium text-slate-600">Knows {mentor.expertise?.[0] || "Various"}</span>
+                            {mentor.bio ? `${mentor.bio.substring(0, 50)}...` : "Student"} • <span className="font-medium text-slate-600">Knows {typeof mentor.expertise?.[0] === "string" ? mentor.expertise[0] : mentor.expertise?.[0]?.name || "Various"}</span>
                           </p>
                           
                           <div className="space-y-2">
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Can Teach You</p>
                             <div className="flex gap-2 flex-wrap">
-                              {mentor.expertise?.map((skill: string, i: number) => (
-                                <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium border border-slate-200">{skill}</span>
+                              {mentor.expertise?.map((skill: any, i: number) => (
+                                <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium border border-slate-200">
+                                  {typeof skill === "string" ? skill : skill.name}
+                                </span>
                               ))}
                             </div>
                           </div>

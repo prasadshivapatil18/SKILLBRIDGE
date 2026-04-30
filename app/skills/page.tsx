@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 
 interface Skill {
@@ -38,26 +39,18 @@ const SKILL_ICONS = [
 ];
 
 export default function SkillsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
+
   // Teaching skills
-  const [teachSkills, setTeachSkills] = useState<Skill[]>([
-    { id: "1", name: "UI Design with Figma", icon: "palette", level: "Expert", sessions: 12, rating: 4.9, progress: 95 },
-    { id: "2", name: "Video Editing", icon: "movie", level: "Advanced", sessions: 8, rating: 5.0, progress: 75 },
-    { id: "3", name: "Python Basics", icon: "code", level: "Intermediate", sessions: 5, rating: 4.7, progress: 40 },
-  ]);
+  const [teachSkills, setTeachSkills] = useState<Skill[]>([]);
 
   // Learning skills
-  const [learnSkills, setLearnSkills] = useState<string[]>([
-    "Advanced React & Next.js",
-    "Conversational French",
-    "Machine Learning",
-  ]);
+  const [learnSkills, setLearnSkills] = useState<string[]>([]);
 
   // Mastered skills
-  const [masteredSkills, setMasteredSkills] = useState<MasteredSkill[]>([
-    { id: "m1", name: "HTML & CSS", icon: "code", completedDate: "Jan 2026", totalSessions: 15, rating: 5.0, badge: "🏆", badgeColor: "from-amber-400 to-yellow-500" },
-    { id: "m2", name: "Photography Basics", icon: "camera_alt", completedDate: "Dec 2025", totalSessions: 10, rating: 4.8, badge: "⭐", badgeColor: "from-primary-400 to-primary-600" },
-    { id: "m3", name: "Public Speaking", icon: "mic", completedDate: "Nov 2025", totalSessions: 8, rating: 4.9, badge: "🎯", badgeColor: "from-secondary-400 to-secondary-600" },
-  ]);
+  const [masteredSkills, setMasteredSkills] = useState<MasteredSkill[]>([]);
 
   // UI state
   const [showAddTeach, setShowAddTeach] = useState(false);
@@ -70,7 +63,86 @@ export default function SkillsPage() {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const addTeachSkill = () => {
+  useEffect(() => {
+    const fetchUser = async () => {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        router.push("/auth");
+        return;
+      }
+
+      const { email } = JSON.parse(storedUser);
+      setUserEmail(email);
+
+      try {
+        const res = await fetch(`/api/user/profile?email=${email}`);
+        const data = await res.json();
+
+        if (res.ok && data.data) {
+          const profile = data.data;
+          
+          // Map expertise (handle both strings and objects)
+          const expertise = profile.expertise || [];
+          const inflatedExpertise: Skill[] = expertise.map((s: any, i: number) => {
+            if (typeof s === "string") {
+              return {
+                id: `e${i}-${Date.now()}`,
+                name: s,
+                icon: "psychology",
+                level: "Beginner",
+                sessions: 0,
+                rating: 0,
+                progress: 25
+              };
+            }
+            return s;
+          });
+          setTeachSkills(inflatedExpertise);
+
+          // Map interests (handle both strings and objects)
+          const interests = profile.interests || [];
+          const inflatedInterests: string[] = interests.map((s: any) => {
+            if (typeof s === "string") return s;
+            return s.name || s.toString();
+          });
+          setLearnSkills(inflatedInterests);
+
+          // Map mastered skills
+          setMasteredSkills(profile.masteredSkills || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch skills:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [router]);
+
+  const saveProfile = async (
+    updatedTeach: Skill[], 
+    updatedLearn: string[], 
+    updatedMastered: MasteredSkill[]
+  ) => {
+    try {
+      await fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userEmail,
+          expertise: updatedTeach,
+          interests: updatedLearn,
+          masteredSkills: updatedMastered,
+          updatedAt: new Date().toISOString()
+        })
+      });
+    } catch (err) {
+      console.error("Failed to save profile:", err);
+    }
+  };
+
+  const addTeachSkill = async () => {
     if (!newTeachName.trim()) return;
     const newSkill: Skill = {
       id: Date.now().toString(),
@@ -79,9 +151,13 @@ export default function SkillsPage() {
       level: newTeachLevel,
       sessions: 0,
       rating: 0,
-      progress: 0,
+      progress: newTeachLevel === "Beginner" ? 25 : newTeachLevel === "Intermediate" ? 50 : newTeachLevel === "Advanced" ? 75 : 100,
     };
-    setTeachSkills([newSkill, ...teachSkills]);
+    
+    const updated = [newSkill, ...teachSkills];
+    setTeachSkills(updated);
+    await saveProfile(updated, learnSkills, masteredSkills);
+
     setNewTeachName("");
     setNewTeachIcon("code");
     setNewTeachLevel("Beginner");
@@ -89,42 +165,64 @@ export default function SkillsPage() {
     setShowIconPicker(false);
   };
 
-  const removeTeachSkill = (id: string) => {
-    setTeachSkills(teachSkills.filter((s) => s.id !== id));
+  const removeTeachSkill = async (id: string) => {
+    const updated = teachSkills.filter((s) => s.id !== id);
+    setTeachSkills(updated);
+    await saveProfile(updated, learnSkills, masteredSkills);
     setDeleteConfirm(null);
   };
 
-  const updateSkillLevel = (id: string, level: Skill["level"]) => {
+  const updateSkillLevel = async (id: string, level: Skill["level"]) => {
     const progressMap = { Beginner: 25, Intermediate: 50, Advanced: 75, Expert: 100 };
-    setTeachSkills(teachSkills.map((s) => (s.id === id ? { ...s, level, progress: progressMap[level] } : s)));
+    const updated = teachSkills.map((s) => (s.id === id ? { ...s, level, progress: progressMap[level] } : s));
+    setTeachSkills(updated);
+    await saveProfile(updated, learnSkills, masteredSkills);
     setEditingId(null);
   };
 
-  const addLearnSkill = () => {
+  const addLearnSkill = async () => {
     if (!newLearnName.trim() || learnSkills.includes(newLearnName.trim())) return;
-    setLearnSkills([newLearnName.trim(), ...learnSkills]);
+    const updated = [newLearnName.trim(), ...learnSkills];
+    setLearnSkills(updated);
+    await saveProfile(teachSkills, updated, masteredSkills);
     setNewLearnName("");
     setShowAddLearn(false);
   };
 
-  const removeLearnSkill = (skill: string) => {
-    setLearnSkills(learnSkills.filter((s) => s !== skill));
+  const removeLearnSkill = async (skill: string) => {
+    const updated = learnSkills.filter((s) => s !== skill);
+    setLearnSkills(updated);
+    await saveProfile(teachSkills, updated, masteredSkills);
   };
 
-  const masterSkill = (skillName: string) => {
+  const masterSkill = async (skillName: string) => {
     const newMastered: MasteredSkill = {
       id: `m${Date.now()}`,
       name: skillName,
       icon: "emoji_events",
       completedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      totalSessions: Math.floor(Math.random() * 10) + 5,
+      totalSessions: Math.floor(Math.random() * 5) + 3,
       rating: 5.0,
       badge: "🎉",
       badgeColor: "from-green-400 to-teal-500"
     };
-    setMasteredSkills([newMastered, ...masteredSkills]);
-    setLearnSkills(learnSkills.filter(s => s !== skillName));
+    
+    const updatedMastered = [newMastered, ...masteredSkills];
+    const updatedLearn = learnSkills.filter(s => s !== skillName);
+    
+    setMasteredSkills(updatedMastered);
+    setLearnSkills(updatedLearn);
+    
+    await saveProfile(teachSkills, updatedLearn, updatedMastered);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-50 flex">

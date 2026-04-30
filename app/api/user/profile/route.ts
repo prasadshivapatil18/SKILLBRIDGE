@@ -3,27 +3,38 @@ import { db } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
   try {
-    const { email, fullName, bio, expertise, interests } = await request.json();
+    const body = await request.json();
+    const { email, fullName, bio, expertise, interests, masteredSkills } = body;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    // Save user profile to Firestore
-    await db.collection("users").doc(email).set({
-      email,
-      fullName,
-      bio,
-      expertise,
-      interests,
-      credits: 50, // Give 50 free credits to new users
-      onboardedAt: new Date().toISOString(),
+    // Prepare update data
+    const updateData: any = {
       updatedAt: new Date().toISOString()
-    });
+    };
+    
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (expertise !== undefined) updateData.expertise = expertise;
+    if (interests !== undefined) updateData.interests = interests;
+    if (masteredSkills !== undefined) updateData.masteredSkills = masteredSkills;
+
+    // Check if user exists to handle credits/onboardedAt
+    const userDoc = await db.collection("users").doc(email).get();
+    if (!userDoc.exists) {
+      updateData.credits = 50;
+      updateData.onboardedAt = new Date().toISOString();
+      updateData.email = email;
+    }
+
+    // Save/Update user profile to Firestore
+    await db.collection("users").doc(email).set(updateData, { merge: true });
 
     return NextResponse.json({ 
       success: true, 
-      message: "Profile created successfully!" 
+      message: userDoc.exists ? "Profile updated successfully!" : "Profile created successfully!" 
     });
 
   } catch (error: any) {

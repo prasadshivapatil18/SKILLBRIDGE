@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
+export interface ChatMessage {
+  senderId: string;
+  text: string;
+  timestamp: string;
+}
+
 const getIceServers = () => {
   const servers: RTCIceServer[] = [
     { urls: "stun:stun.l.google.com:19302" },
@@ -27,6 +33,7 @@ export function useWebRTC(roomId: string, token?: string) {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const socketRef = useRef<Socket | null>(null);
   const pcMap = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -164,6 +171,10 @@ export function useWebRTC(roomId: string, token?: string) {
           }
         });
 
+        socket.on("receive-message", (message: ChatMessage) => {
+          setMessages((prev) => [...prev, message]);
+        });
+
       } catch (err: any) {
         console.error("WebRTC Init Error:", err);
         setError(err.message || "Failed to access camera/microphone");
@@ -208,7 +219,17 @@ export function useWebRTC(roomId: string, token?: string) {
     setLocalStream(null);
     setRemoteStreams(new Map());
     setIsConnected(false);
+    setMessages([]);
   }, []);
+
+  const sendMessage = useCallback((text: string) => {
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit("send-message", {
+        roomId,
+        message: { text }
+      });
+    }
+  }, [roomId, isConnected]);
 
   return {
     localStream,
@@ -218,5 +239,8 @@ export function useWebRTC(roomId: string, token?: string) {
     toggleAudio,
     toggleVideo,
     leaveCall,
+    messages,
+    sendMessage,
+    socketId: socketRef.current?.id
   };
 }

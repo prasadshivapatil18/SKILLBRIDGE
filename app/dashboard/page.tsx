@@ -283,21 +283,28 @@ export default function Dashboard() {
 
               <div className="space-y-4">
                 {user?.expertise?.length > 0 ? (
-                  user.expertise.map((skill: string, i: number) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg ${i % 2 === 0 ? 'bg-primary-100 text-primary-600' : 'bg-secondary-100 text-secondary-600'} flex items-center justify-center`}>
-                          <span className="material-symbols-outlined">{i % 2 === 0 ? 'psychology' : 'school'}</span>
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-800 text-sm">{skill}</h4>
-                          <p className="text-xs text-slate-500 flex items-center gap-1">
-                            <span className="text-tertiary-500 font-bold">New</span> (0 sessions)
-                          </p>
+                  user.expertise.map((skill: any, i: number) => {
+                    const skillName = typeof skill === "string" ? skill : skill.name;
+                    const skillIcon = typeof skill === "string" ? (i % 2 === 0 ? "psychology" : "school") : skill.icon;
+                    return (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg ${i % 2 === 0 ? 'bg-primary-100 text-primary-600' : 'bg-secondary-100 text-secondary-600'} flex items-center justify-center`}>
+                            <span className="material-symbols-outlined">{skillIcon}</span>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-sm">{skillName}</h4>
+                            <p className="text-xs text-slate-500 flex items-center gap-1">
+                              <span className="text-tertiary-500 font-bold">
+                                {typeof skill === "string" ? "New" : skill.level}
+                              </span> 
+                              ({typeof skill === "string" ? 0 : skill.sessions} sessions)
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className="text-slate-400 text-sm italic">No expertise added yet.</p>
                 )}
@@ -316,15 +323,18 @@ export default function Dashboard() {
 
               <div className="space-y-4">
                 {user?.interests?.length > 0 ? (
-                  user.interests.map((skill: string, i: number) => (
-                    <div key={i} className="p-3 border border-slate-100 rounded-xl bg-slate-50 flex justify-between items-center group">
-                      <div>
-                        <h4 className="font-semibold text-slate-800 text-sm">{skill}</h4>
-                        <p className="text-xs text-primary-600 mt-0.5">Searching for Partner...</p>
+                  user.interests.map((skill: any, i: number) => {
+                    const skillName = typeof skill === "string" ? skill : skill.name;
+                    return (
+                      <div key={i} className="p-3 border border-slate-100 rounded-xl bg-slate-50 flex justify-between items-center group">
+                        <div>
+                          <h4 className="font-semibold text-slate-800 text-sm">{skillName}</h4>
+                          <p className="text-xs text-primary-600 mt-0.5">Searching for Partner...</p>
+                        </div>
+                        <span className="material-symbols-outlined text-slate-300 group-hover:text-primary-500 transition-colors animate-pulse">search</span>
                       </div>
-                      <span className="material-symbols-outlined text-slate-300 group-hover:text-primary-500 transition-colors animate-pulse">search</span>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className="text-slate-400 text-sm italic">No interests added yet.</p>
                 )}
