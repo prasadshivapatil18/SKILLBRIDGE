@@ -11,6 +11,14 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Reschedule state
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [newDuration, setNewDuration] = useState("1h");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +60,44 @@ export default function Dashboard() {
 
     fetchData();
   }, [router]);
+
+  const handleRescheduleAction = async (sessionId: string, action: 'accept' | 'reject' | 'propose') => {
+    setActionLoading(sessionId);
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) return;
+    const { email } = JSON.parse(storedUser);
+
+    try {
+      const body = {
+        sessionId,
+        action,
+        userEmail: email,
+        ...(action === 'propose' && { date: newDate, time: newTime, duration: newDuration })
+      };
+
+      const res = await fetch("/api/sessions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        alert(`[OK] Reschedule ${action}ed successfully!`);
+        setRescheduleModalOpen(false);
+        // Refresh sessions
+        const updatedRes = await fetch(`/api/sessions?email=${email}&status=upcoming`);
+        const updatedData = await updatedRes.json();
+        if (updatedRes.ok) setSessions(updatedData.data);
+      } else {
+        const error = await res.json();
+        alert(`[X] Error: ${error.error || "Failed to update session"}`);
+      }
+    } catch (err) {
+      console.error("Reschedule error:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -129,6 +175,63 @@ export default function Dashboard() {
                           Copy
                         </button>
                       </div>
+
+                      {/* Reschedule Request Banner */}
+                      {session.rescheduleRequest && session.rescheduleRequest.status === 'pending' && (
+                        <div className="mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 animate-pulse">
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div className="flex items-center gap-3">
+                              <span className="material-symbols-outlined text-amber-500">schedule_send</span>
+                              <div>
+                                <p className="text-xs font-black text-amber-700 uppercase tracking-wider">
+                                  {session.rescheduleRequest.proposedBy === user?.email ? "Waiting for Approval" : "Reschedule Proposed"}
+                                </p>
+                                <p className="text-sm text-amber-600 font-medium">
+                                  {session.rescheduleRequest.date} at {session.rescheduleRequest.time} ({session.rescheduleRequest.duration})
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {session.rescheduleRequest.proposedBy !== user?.email && (
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => handleRescheduleAction(session.id, 'accept')}
+                                  disabled={actionLoading === session.id}
+                                  className="px-4 py-2 bg-green-500 text-white text-xs font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50"
+                                >
+                                  Accept
+                                </button>
+                                <button 
+                                  onClick={() => handleRescheduleAction(session.id, 'reject')}
+                                  disabled={actionLoading === session.id}
+                                  className="px-4 py-2 bg-white border border-amber-200 text-amber-600 text-xs font-bold rounded-xl hover:bg-amber-50 transition-all disabled:opacity-50"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Reschedule Button */}
+                      {!session.rescheduleRequest && (
+                        <div className="mt-4 flex justify-end">
+                          <button 
+                            onClick={() => {
+                              setSelectedSession(session);
+                              setNewDate(session.date);
+                              setNewTime(session.time);
+                              setNewDuration(session.duration || "1h");
+                              setRescheduleModalOpen(true);
+                            }}
+                            className="text-xs font-bold text-slate-400 hover:text-primary-500 flex items-center gap-1.5 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">edit_calendar</span>
+                            Reschedule Session
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -363,6 +466,98 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Reschedule Modal */}
+      {rescheduleModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setRescheduleModalOpen(false)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center">
+                  <span className="material-symbols-outlined">edit_calendar</span>
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 uppercase tracking-tight">Reschedule Session</h3>
+                  <p className="text-xs text-slate-500 font-medium">Propose new timings to your partner</p>
+                </div>
+              </div>
+              <button onClick={() => setRescheduleModalOpen(false)} className="w-8 h-8 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-colors shadow-sm border border-transparent hover:border-slate-100">
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Proposed Date</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">calendar_month</span>
+                  <input 
+                    type="date" 
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">New Time</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">schedule</span>
+                    <input 
+                      type="text" 
+                      value={newTime}
+                      placeholder="e.g. 4:30 PM"
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Duration</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">timer</span>
+                    <select 
+                      value={newDuration}
+                      onChange={(e) => setNewDuration(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all appearance-none"
+                    >
+                      <option value="30m">30 Minutes</option>
+                      <option value="1h">1 Hour</option>
+                      <option value="1.5h">1.5 Hours</option>
+                      <option value="2h">2 Hours</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
+                <span className="material-symbols-outlined text-amber-500 text-[20px] mt-0.5">info</span>
+                <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                  The session timings will only update once your partner accepts this proposal.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => handleRescheduleAction(selectedSession.id, 'propose')}
+                disabled={actionLoading === selectedSession?.id}
+                className="w-full py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl shadow-xl shadow-slate-200 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {actionLoading === selectedSession?.id ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined">send</span>
+                    Send Proposal
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

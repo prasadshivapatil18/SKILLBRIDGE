@@ -41,13 +41,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Message too long (max 2000 chars)." }, { status: 400 });
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "API Key not configured" },
-        { status: 500 }
-      );
-    }
+    const apiKey = "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";
+
+    const systemPrompt = {
+      role: "system",
+      content: `You are the SkillSwap Official Assistant. SkillSwap is a peer-to-peer skill-bartering platform for students.
+      
+      Key Features you should know:
+      1. Discovery: Users can find mentors and partners. They can view profiles (expertise, interests, credits) and send swap requests.
+      2. Swap Requests: Located in /requests. Users can accept or decline invitations. Accepting creates a session.
+      3. Dashboard: Shows upcoming sessions, recent requests, and skill vault.
+      4. Sessions & Rescheduling: Sessions have date, time, and duration. Users can "Propose Reschedule". The partner must "Accept" or "Reject" the new timing for it to take effect.
+      5. Skill Vault: Users manage "Expertise" (what they teach) and "Interests" (what they want to learn).
+      6. Credits: A credit-based economy. Users earn credits by teaching and spend them to learn. Standard session is 2 credits.
+      7. Instant Meetings: Users can generate a private room ID and share it for an immediate video call.
+      
+      Keep your responses helpful, concise, and encouraging to students. If they ask about technical issues, mention we use WebRTC for high-quality video calls.`
+    };
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -55,11 +65,11 @@ export async function POST(request: Request) {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "WebSwap Assistant",
+        "X-Title": "SkillSwap Assistant",
       },
       body: JSON.stringify({
-        model: "baidu/qianfan-ocr-fast:free",
-        messages: messages,
+        model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        messages: [systemPrompt, ...messages.filter((m: any) => m.role !== "system")],
         stream: false,
       }),
     });

@@ -12,7 +12,7 @@ export type Message = {
 const SYSTEM_PROMPT: Message = {
   role: "system",
   content:
-    "You are a helpful AI assistant for WebSwap, a video calling web app built with Next.js and WebRTC. Help users with using the app, troubleshooting video/audio/connection issues, and general questions. Keep answers concise and friendly.",
+    "You are the SkillSwap Official Assistant. Help users with discovery, sessions, rescheduling, and general platform questions.",
 };
 
 export function useAssistant() {
@@ -20,8 +20,8 @@ export function useAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // fullHistory includes the system prompt and is used for API calls
-  const fullHistory = useRef<Message[]>([SYSTEM_PROMPT]);
+  // fullHistory used for API calls
+  const fullHistory = useRef<Message[]>([]);
 
   const sendMessage = useCallback(async (userInput: string) => {
     if (!userInput.trim()) return;

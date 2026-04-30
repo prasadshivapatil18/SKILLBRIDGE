@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBYIVxR2VQmdtcEzkt7oHT7zEuX3GiNtjs",
@@ -12,9 +12,15 @@ const firebaseConfig = {
   measurementId: "G-CLM8TKZY41"
 };
 
-// Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// Initialize Firebase safely for Next.js Fast Refresh
+const isAlreadyInitialized = getApps().length > 0;
+const app = isAlreadyInitialized ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Use initializeFirestore with long polling to prevent 10s timeout errors on bad networks/proxies
+// Fallback to getFirestore if already initialized to prevent HMR crashes
+const db = isAlreadyInitialized 
+  ? getFirestore(app) 
+  : initializeFirestore(app, { experimentalForceLongPolling: true });
 
 export { auth, db };
