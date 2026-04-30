@@ -34,6 +34,7 @@ export function useWebRTC(roomId: string, token?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [socketId, setSocketId] = useState<string | undefined>(undefined);
 
   const socketRef = useRef<Socket | null>(null);
   const pcMap = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -106,8 +107,9 @@ export function useWebRTC(roomId: string, token?: string) {
         setLocalStream(stream);
 
         // 2. Connect to Socket
-        const socket = io({
+        const socket = io(typeof window !== "undefined" ? window.location.origin : undefined, {
           path: "/socket.io",
+          transports: ["websocket", "polling"],
           auth: { token }
         });
         socketRef.current = socket;
@@ -120,6 +122,7 @@ export function useWebRTC(roomId: string, token?: string) {
 
         socket.on("connect", () => {
           setIsConnected(true);
+          setSocketId(socket.id);
           socket.emit("join-room", roomId);
         });
 
@@ -176,7 +179,6 @@ export function useWebRTC(roomId: string, token?: string) {
         });
 
       } catch (err: any) {
-        console.error("WebRTC Init Error:", err);
         setError(err.message || "Failed to access camera/microphone");
       }
     };
@@ -241,6 +243,6 @@ export function useWebRTC(roomId: string, token?: string) {
     leaveCall,
     messages,
     sendMessage,
-    socketId: socketRef.current?.id
+    socketId
   };
 }

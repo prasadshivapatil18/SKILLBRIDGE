@@ -100,12 +100,15 @@ app.prepare().then(() => {
     });
 
     socket.on("send-message", ({ roomId, message }: { roomId: string, message: any }) => {
-      console.log(`Message in ${roomId} from ${socket.id}:`, message);
-      io.to(roomId).emit("receive-message", {
+      if (!roomId) return;
+      
+      const broadcastData = {
         ...message,
         senderId: socket.id,
         timestamp: new Date().toISOString()
-      });
+      };
+      
+      io.to(roomId).emit("receive-message", broadcastData);
     });
 
     socket.on("disconnecting", () => {

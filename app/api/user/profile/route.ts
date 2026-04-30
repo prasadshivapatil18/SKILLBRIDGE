@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
+import { db, admin } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, fullName, bio, expertise, interests, masteredSkills } = body;
+    const { email, fullName, bio, expertise, interests, masteredSkills, credits, action } = body;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
+    }
+
+    // Handle credit increments
+    if (action === "increment_credits" && credits) {
+      await db.collection("users").doc(email).update({
+        credits: admin.firestore.FieldValue.increment(credits),
+        updatedAt: new Date().toISOString()
+      });
+      return NextResponse.json({ success: true, message: "Credits updated successfully!" });
     }
 
     // Prepare update data

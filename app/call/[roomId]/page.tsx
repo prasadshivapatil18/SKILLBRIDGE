@@ -9,6 +9,14 @@ export default function CallPage() {
   const params = useParams<{ roomId: string }>();
   const roomId = params?.roomId || "";
   const router = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setEmail(JSON.parse(storedUser).email);
+    }
+  }, []);
 
   const {
     localStream,
@@ -27,7 +35,9 @@ export default function CallPage() {
   const [isCamOn, setIsCamOn] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [messageInput, setMessageInput] = useState("");
+  const [sessionTime, setSessionTime] = useState(0); // in seconds
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleToggleAudio = () => {
     toggleAudio();
@@ -39,18 +49,56 @@ export default function CallPage() {
     setIsCamOn(!isCamOn);
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleLeave = () => {
     leaveCall();
-    router.push("/");
+    if (timerRef.current) clearInterval(timerRef.current);
+    const mins = Math.floor(sessionTime / 60);
+    // User gets 1 credit for every 15 mins
+    const earnedCredits = Math.floor(mins / 15);
+    
+    // Update credits in background
+    if (earnedCredits > 0 && email) {
+      fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email,
+          credits: earnedCredits, 
+          action: "increment_credits" 
+        })
+      }).catch(err => console.error("Failed to update credits:", err));
+    }
+    
+    router.push(`/call/${roomId}/summary?duration=${sessionTime}&credits=${earnedCredits}`);
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (messageInput.trim() && isConnected) {
-      sendMessage(messageInput.trim());
+    const text = messageInput.trim();
+    if (text && isConnected) {
+      sendMessage(text);
       setMessageInput("");
     }
   };
+
+  useEffect(() => {
+    if (isConnected) {
+      timerRef.current = setInterval(() => {
+        setSessionTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isConnected]);
 
   useEffect(() => {
     if (showChat) {
@@ -110,11 +158,19 @@ export default function CallPage() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-white">Room: {roomId}</h1>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                {isConnected ? 'Connected' : 'Connecting...'}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                  {isConnected ? 'Connected' : 'Connecting...'}
+                </p>
+              </div>
+              {isConnected && (
+                <div className="flex items-center gap-2 px-2 py-0.5 bg-white/5 rounded-md border border-white/5">
+                  <span className="material-symbols-outlined text-[12px] text-primary-400">timer</span>
+                  <span className="text-[10px] font-mono font-bold text-gray-300">{formatTime(sessionTime)}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
