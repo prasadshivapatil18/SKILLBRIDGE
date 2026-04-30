@@ -107,7 +107,7 @@ export default function CallPage() {
   }, [messages, showChat]);
 
   useEffect(() => {
-    // Silent context injection — not shown in UI
+    // Silent context injection - not shown in UI
     // We do this by directly posting to the API, not via sendMessage
     // so it doesn't appear in the visible chat history
     fetch("/api/assistant", {
@@ -127,7 +127,7 @@ export default function CallPage() {
           }
         ]
       })
-    }).catch(() => {}); // silent — don't surface errors for context injection
+    }).catch(() => {}); // silent - don't surface errors for context injection
   }, [roomId]);
 
   if (error) {
@@ -256,7 +256,7 @@ export default function CallPage() {
                         <p className="break-words">{msg.text}</p>
                       </div>
                       <span className="text-[10px] text-gray-500 mt-1 px-1">
-                        {isMe ? 'You' : `User ${msg.senderId.slice(0, 4)}`} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isMe ? 'You' : `User ${msg.senderId.slice(0, 4)}`} {"\u00B7"} {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   );

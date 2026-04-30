@@ -238,14 +238,18 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {expertise.map(skill => (
-                    <span key={skill} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-sm font-bold border border-primary-100">
-                      {skill}
-                      <button onClick={() => removeExpertise(skill)} className="hover:text-primary-900">
-                        <span className="material-symbols-outlined text-sm">close</span>
-                      </button>
-                    </span>
-                  ))}
+                  {Array.isArray(expertise) && expertise.map((skill: any, i: number) => {
+                    const skillName = typeof skill === "string" ? skill : (skill?.name || "Skill");
+                    const skillId = typeof skill === "string" ? skill : (skill?.id || i.toString());
+                    return (
+                      <span key={skillId} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-sm font-bold border border-primary-100">
+                        {skillName}
+                        <button onClick={() => removeExpertise(skill)} className="hover:text-primary-900">
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -269,14 +273,18 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {interests.map(skill => (
-                    <span key={skill} className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg text-sm font-bold border border-secondary-100">
-                      {skill}
-                      <button onClick={() => removeInterest(skill)} className="hover:text-secondary-900">
-                        <span className="material-symbols-outlined text-sm">close</span>
-                      </button>
-                    </span>
-                  ))}
+                  {Array.isArray(interests) && interests.map((skill: any, i: number) => {
+                    const skillName = typeof skill === "string" ? skill : (skill?.name || "Skill");
+                    const skillId = typeof skill === "string" ? skill : (skill?.id || i.toString());
+                    return (
+                      <span key={skillId} className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg text-sm font-bold border border-secondary-100">
+                        {skillName}
+                        <button onClick={() => removeInterest(skill)} className="hover:text-secondary-900">
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -297,7 +305,7 @@ export default function SettingsPage() {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-primary-500"
-                    placeholder="••••••••"
+                    placeholder="--------"
                   />
                 </div>
                 <div>
@@ -307,7 +315,7 @@ export default function SettingsPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-primary-500"
-                    placeholder="••••••••"
+                    placeholder="--------"
                   />
                 </div>
                 <div>
@@ -317,7 +325,7 @@ export default function SettingsPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-primary-500"
-                    placeholder="••••••••"
+                    placeholder="--------"
                   />
                 </div>
               </div>

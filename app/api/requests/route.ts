@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase-admin";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(request: Request) {
   try {
@@ -84,6 +85,15 @@ export async function POST(request: Request) {
 
     const docRef = await db.collection("requests").add(newRequest);
 
+    // Notify receiver about new request
+    await createNotification({
+      userEmail: receiverEmail,
+      title: "New Swap Request",
+      message: `${senderData.fullName} wants to swap skills with you!`,
+      type: "request",
+      link: "/requests"
+    });
+
     return NextResponse.json({
       success: true,
       message: "Swap request sent successfully!",
@@ -122,6 +132,9 @@ export async function PATCH(request: Request) {
       const { v4: uuidv4 } = require("uuid");
       const roomId = uuidv4();
 
+      const sessionDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const sessionTime = "3:00 PM";
+
       const sessionDoc = await db.collection("sessions").add({
         participants: [requestData.senderEmail, requestData.receiverEmail],
         senderName: requestData.senderName,
@@ -133,11 +146,12 @@ export async function PATCH(request: Request) {
         partnerName: requestData.senderName,
         roomId: roomId,
         status: "upcoming",
-        date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        time: "3:00 PM",
+        date: sessionDate,
+        time: sessionTime,
         duration: "1h",
         type: "learned",
         credits: 2,
+        reminderSent: false,
         createdAt: new Date().toISOString()
       });
 
@@ -147,12 +161,47 @@ export async function PATCH(request: Request) {
         roomId: roomId
       });
 
+      // Notify sender that their request was accepted
+      await createNotification({
+        userEmail: requestData.senderEmail,
+        title: "Request Accepted!",
+        message: `${requestData.receiverName} accepted your swap request for ${requestData.skillWanted}.`,
+        type: "request",
+        link: "/requests"
+      });
+
+      // Notify both that a session is scheduled
+      const sessionMsg = `New session scheduled for ${sessionDate} at ${sessionTime}.`;
+      await createNotification({
+        userEmail: requestData.senderEmail,
+        title: "Session Scheduled",
+        message: sessionMsg,
+        type: "session",
+        link: "/dashboard"
+      });
+      await createNotification({
+        userEmail: requestData.receiverEmail,
+        title: "Session Scheduled",
+        message: sessionMsg,
+        type: "session",
+        link: "/dashboard"
+      });
+
       return NextResponse.json({ success: true, message: "Request accepted! Session created." });
 
     } else if (action === "decline") {
       await db.collection("requests").doc(requestId).update({
         status: "declined",
         declinedAt: new Date().toISOString()
+      });
+
+      // Notify sender that their request was declined
+      await createNotification({
+        userEmail: requestData.senderEmail,
+        title: "Request Declined",
+        message: `${requestData.receiverName} declined your swap request.`,
+        type: "request",
+        link: "/requests"
       });
 
       return NextResponse.json({ success: true, message: "Request declined." });
@@ -165,3 +214,4 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Failed to update request." }, { status: 500 });
   }
 }
+

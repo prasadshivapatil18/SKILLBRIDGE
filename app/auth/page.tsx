@@ -130,7 +130,7 @@ export default function AuthPage() {
                       handleAuth();
                     }
                   }}
-                  placeholder="••••••••"
+                  placeholder="--------"
                   className="w-full px-5 py-4 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all text-slate-700 bg-slate-50 focus:bg-white"
                 />
               </div>

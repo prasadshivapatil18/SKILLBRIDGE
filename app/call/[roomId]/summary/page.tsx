@@ -130,7 +130,7 @@ export default function SessionSummaryPage() {
 
         {/* Footer Note */}
         <p className="text-center text-gray-600 text-[10px] mt-8 uppercase tracking-[0.2em] font-bold">
-          SkillSwap Economy • Verified Session
+          SkillSwap Economy - Verified Session
         </p>
       </div>
     </div>
