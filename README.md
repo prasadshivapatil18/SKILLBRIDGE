@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SkillSwap: Peer-to-Peer Learning Platform
 
-## Getting Started
+SkillSwap is a modern, student-centric web application designed to facilitate skill bartering within university communities. It allows students to exchange knowledge, host group sessions, and grow their expertise through a credit-based economy.
 
-First, run the development server:
+## 🚀 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Dynamic Discovery**: Find and connect with students who possess the skills you want to learn. Filter by expertise, department, or specific interest.
+- **Skill Vault**: Manage your "Teaching" expertise and "Learning" goals. Track your mastery progress and showcase your achievements in the Hall of Fame.
+- **Group Sessions**: Host or join community-based learning sessions. Collaborate with multiple students simultaneously on topics ranging from coding to UI design.
+- **Credit Economy**: A fair exchange system where students earn credits by sharing their knowledge and spend them to learn new skills.
+- **Real-time Notifications**: Stay updated with instant alerts for swap requests, session approvals, and upcoming class reminders.
+- **Secure Authentication**: Student-verified login system ensuring a safe and trusted environment for campus communities.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Technology Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend**: [Next.js 14+](https://nextjs.org/) (App Router), React, Tailwind CSS.
+- **Backend**: Next.js API Routes, [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup).
+- **Database**: [Google Cloud Firestore](https://firebase.google.com/docs/firestore).
+- **Authentication**: Custom Email/Password and OTP-based verification.
+- **Icons & UI**: Material Symbols, Lexend & Jakarta Sans typography.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📂 Project Structure
 
-## Learn More
+- `/app`: Next.js App Router pages and API routes.
+- `/components`: Reusable UI components (Sidebar, NotificationCenter, etc.).
+- `/lib`: Configuration files for Firebase and utility functions.
+- `/public`: Static assets and media.
 
-To learn more about Next.js, take a look at the following resources:
+## ⚙️ Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Prerequisites
+- Node.js 18.x or higher
+- A Firebase project with Firestore enabled
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Installation
 
-## Deploy on Vercel
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd webswap
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory and add your Firebase credentials:
+   ```env
+   FIREBASE_PROJECT_ID=your-project-id
+   FIREBASE_CLIENT_EMAIL=your-client-email
+   FIREBASE_PRIVATE_KEY="your-private-key"
+   ```
+
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🛡️ Authentication & Security
+The platform uses `firebase-admin` for server-side validation and secure database operations. Ensure your Service Account keys are kept private and never committed to version control.
+
+## 📝 License
+This project is for educational and community-driven development.
