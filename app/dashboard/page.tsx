@@ -94,7 +94,7 @@ export default function Dashboard() {
                           <div>
                             <h3 className="font-bold text-slate-800 text-lg group-hover:text-primary-600 transition-colors">{session.title}</h3>
                             <p className="text-sm text-slate-500">
-                              with <span className="font-medium text-slate-700">{session.partnerName}</span> • {session.time} • {session.date}
+                              with <span className="font-medium text-slate-700">{session.partnerName}</span> - {session.time} - {session.date}
                             </p>
                           </div>
                         </div>
@@ -121,7 +121,7 @@ export default function Dashboard() {
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(session.roomId || session.id);
-                            alert("✅ Room ID copied to clipboard!");
+                            alert("[OK] Room ID copied to clipboard!");
                           }}
                           className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 flex items-center gap-1.5 transition-colors active:scale-95"
                         >
@@ -183,7 +183,7 @@ export default function Dashboard() {
                               });
                               if (res.ok) {
                                 setRequests(prev => prev.filter((r: any) => r.id !== req.id));
-                                alert("✅ Request accepted! A session has been created.");
+                                alert("[OK] Request accepted! A session has been created.");
                               }
                             } catch (err) {
                               console.error("Failed to accept:", err);

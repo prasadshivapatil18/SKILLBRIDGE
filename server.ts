@@ -1,8 +1,19 @@
 import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
+import { loadEnvConfig } from "@next/env";
+
+// Load environment variables before any other imports
+loadEnvConfig(process.cwd());
+
+// Now import everything else
 import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
+
+// Using require to ensure env vars are loaded first
+const { db } = require("./lib/firebase-admin");
+const { createNotification } = require("./lib/notifications");
+
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -43,7 +54,7 @@ app.prepare().then(() => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         (socket as any).user = decoded;
       } catch (err) {
-        console.warn("Invalid token from", socket.id, "— allowing as anonymous");
+        console.warn("Invalid token from", socket.id, "- allowing as anonymous");
       }
     }
 
@@ -137,5 +148,70 @@ app.prepare().then(() => {
     })
     .listen(port, () => {
       console.log(`> Ready on http://${hostname}:${port}`);
+      
+      // Start background tasks
+      startSessionReminders();
     });
+
+  // Background Task: Session Reminders
+  async function startSessionReminders() {
+    console.log("Starting session reminder background task...");
+
+    setInterval(async () => {
+      try {
+        const now = new Date();
+        const thirtyMinutesLater = new Date(now.getTime() + 30 * 60 * 1000);
+        const thirtyFiveMinutesLater = new Date(now.getTime() + 35 * 60 * 1000);
+
+        // Fetch upcoming sessions that haven't had a reminder sent
+        const snapshot = await db.collection("sessions")
+          .where("status", "==", "upcoming")
+          .where("reminderSent", "==", false)
+          .get();
+
+        for (const doc of snapshot.docs) {
+          const session = doc.data();
+          const { date, time, participants, title } = session;
+
+          // Parse "YYYY-MM-DD" and "h:mm AM/PM"
+          try {
+            const [year, month, day] = date.split("-").map(Number);
+            let [timeStr, modifier] = time.split(" ");
+            let [hours, minutes] = timeStr.split(":").map(Number);
+
+            if (modifier === "PM" && hours < 12) hours += 12;
+            if (modifier === "AM" && hours === 12) hours = 0;
+
+            const sessionStartTime = new Date(year, month - 1, day, hours, minutes);
+
+            // Check if session starts in ~30 minutes
+            if (sessionStartTime >= thirtyMinutesLater && sessionStartTime <= thirtyFiveMinutesLater) {
+              console.log(`Sending 30min reminder for session: ${title}`);
+
+              // Notify both participants
+              for (const email of participants) {
+                await createNotification({
+                  userEmail: email,
+                  title: "Session Starting Soon!",
+                  message: `Your session "${title}" begins in 30 minutes. Get ready!`,
+                  type: "session",
+                  link: `/session/${doc.id}`
+                });
+              }
+
+              // Mark reminder as sent
+              await db.collection("sessions").doc(doc.id).update({
+                reminderSent: true
+              });
+            }
+          } catch (parseError) {
+            console.error("Error parsing session date/time:", parseError);
+          }
+        }
+      } catch (error) {
+        console.error("Error in session reminder task:", error);
+      }
+    }, 60000); // Check every minute
+  }
 });
+

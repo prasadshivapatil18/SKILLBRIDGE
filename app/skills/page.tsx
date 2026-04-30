@@ -203,7 +203,7 @@ export default function SkillsPage() {
       completedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       totalSessions: Math.floor(Math.random() * 5) + 3,
       rating: 5.0,
-      badge: "🎉",
+      badge: "*",
       badgeColor: "from-green-400 to-teal-500"
     };
     
@@ -578,7 +578,7 @@ export default function SkillsPage() {
                     </div>
                     <div className="text-center border-l border-slate-100">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Rating</p>
-                      <p className="text-lg font-black text-slate-800">{skill.rating} ★</p>
+                      <p className="text-lg font-black text-slate-800">{skill.rating} *</p>
                     </div>
                   </div>
                   

@@ -245,7 +245,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary-500">swap_horiz</span>
             <span className="font-bold text-slate-800 font-[family-name:var(--font-jakarta)]">SkillSwap</span>
-            <span className="text-slate-500 text-sm ml-2">© 2024. Built for students, by students.</span>
+            <span className="text-slate-500 text-sm ml-2">(c) 2024. Built for students, by students.</span>
           </div>
           <div className="flex gap-6 text-sm font-medium text-slate-500">
             <Link href="#" className="hover:text-primary-500 transition-colors">Community Guidelines</Link>

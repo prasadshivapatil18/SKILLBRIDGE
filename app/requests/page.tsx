@@ -58,7 +58,7 @@ export default function RequestsPage() {
           setIncomingRequests(prev =>
             prev.map(r => r.id === requestId ? { ...r, status: 'accepted' } : r)
           );
-          alert("✅ Request accepted! A session has been created.");
+          alert("[OK] Request accepted! A session has been created.");
         } else {
           setIncomingRequests(prev =>
             prev.map(r => r.id === requestId ? { ...r, status: 'declined' } : r)
@@ -67,7 +67,7 @@ export default function RequestsPage() {
       }
     } catch (err) {
       console.error("Failed to update request:", err);
-      alert("❌ Failed to update. Please try again.");
+      alert("[X] Failed to update. Please try again.");
     } finally {
       setActionLoading(null);
     }
@@ -205,7 +205,9 @@ export default function RequestsPage() {
                           <div className={`w-20 h-20 rounded-full ${getAvatarColor(displayName)} flex items-center justify-center text-2xl font-black mb-4 shadow-inner group-hover:scale-105 transition-transform duration-500`}>
                             {getInitials(displayName)}
                           </div>
-                          <h3 className="font-bold text-slate-900 leading-tight">{displayName || "Student"}</h3>
+                          <h3 className="font-bold text-slate-900 leading-tight">
+                            {typeof displayName === "string" ? displayName : "Student"}
+                          </h3>
                           <p className="text-[11px] text-slate-500 font-medium mb-3">{displayEmail}</p>
                           <div className={`flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-bold shadow-sm ${
                             req.status === 'pending' ? 'bg-amber-50 border-amber-200 text-amber-600' :
@@ -228,7 +230,7 @@ export default function RequestsPage() {
                               </p>
                               <p className="font-bold text-primary-600 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[18px]">school</span>
-                                {req.skillWanted || "General"}
+                                {typeof req.skillWanted === "string" ? req.skillWanted : (req.skillWanted?.name || "General")}
                               </p>
                             </div>
                             <div className="space-y-1">
@@ -237,7 +239,7 @@ export default function RequestsPage() {
                               </p>
                               <p className="font-bold text-secondary-600 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
-                                {req.skillOffered || "General"}
+                                {typeof req.skillOffered === "string" ? req.skillOffered : (req.skillOffered?.name || "General")}
                               </p>
                             </div>
                           </div>
@@ -310,7 +312,7 @@ export default function RequestsPage() {
                             <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${
                               req.status === 'accepted' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
                             }`}>
-                              {req.status === 'accepted' ? '✅ Accepted' : '❌ Declined'}
+                              {req.status === 'accepted' ? '[OK] Accepted' : '[X] Declined'}
                             </div>
                             {req.status === 'accepted' && (req.roomId || req.sessionId) && (
                               <>
@@ -440,8 +442,12 @@ export default function RequestsPage() {
                         {getInitials(req.senderName)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate">{req.senderName}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">{req.skillWanted}</p>
+                        <p className="text-sm font-bold text-slate-800 truncate">
+                          {typeof req.senderName === "string" ? req.senderName : "Student"}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">
+                          {typeof req.skillWanted === "string" ? req.skillWanted : (req.skillWanted?.name || "Skill")}
+                        </p>
                       </div>
                       <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
                         req.status === 'accepted' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'

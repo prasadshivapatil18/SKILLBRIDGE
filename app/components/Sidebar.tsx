@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import NotificationCenter from "./NotificationCenter";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -51,26 +52,31 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col fixed left-0 top-0">
       <div className="p-6">
-        <Link href="/" className="flex items-center gap-2 group mb-8">
-          <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-white text-sm">swap_horiz</span>
-          </div>
-          <span className="text-xl font-extrabold text-slate-800 tracking-tight font-[family-name:var(--font-jakarta)]">
-            SkillSwap
-          </span>
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform">
+              <span className="material-symbols-outlined text-white text-sm">swap_horiz</span>
+            </div>
+            <span className="text-xl font-extrabold text-slate-800 tracking-tight font-[family-name:var(--font-jakarta)]">
+              SkillSwap
+            </span>
+          </Link>
+          <NotificationCenter />
+        </div>
 
         {/* User Profile Summary */}
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 mb-6">
           <div className="w-10 h-10 rounded-full bg-secondary-100 border-2 border-white shadow-sm flex items-center justify-center text-secondary-700 font-bold">
-            {getInitials(user?.fullName)}
+            {typeof user?.fullName === "string" ? getInitials(user.fullName) : "??"}
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-bold text-slate-800 truncate">{user?.fullName || "Student"}</p>
+            <p className="text-sm font-bold text-slate-800 truncate">
+              {typeof user?.fullName === "string" ? user.fullName : "Student"}
+            </p>
             <p className="text-xs text-slate-500 truncate">
               {typeof user?.expertise?.[0] === "string" 
                 ? user.expertise[0] 
-                : user?.expertise?.[0]?.name || "Exploring"}
+                : (typeof user?.expertise?.[0]?.name === "string" ? user.expertise[0].name : "Exploring")}
             </p>
           </div>
         </div>
